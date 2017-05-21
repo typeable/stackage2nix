@@ -27,7 +27,8 @@ pinfo = info
   (  fullDesc
   <> header "stack2nix converts Stack files into build instructions for Nix." )
 
+
 main :: IO ()
 main = do
   Options {..} <- execParser pinfo
-  print nixpkgsOverride
+  print $ nixpkgsOverride overrideConfigFixture
