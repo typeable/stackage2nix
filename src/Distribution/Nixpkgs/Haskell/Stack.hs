@@ -1,13 +1,21 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Distribution.Nixpkgs.Haskell.Stack where
 
+import Control.Lens
+import Data.Text as T
+import Distribution.System as System
+import Distribution.Compiler as Compiler
+import Distribution.PackageDescription as PackageDescription
+import Distribution.Nixpkgs.Fetch
+import Distribution.Nixpkgs.Haskell.Derivation
+import Distribution.Nixpkgs.Haskell.FromCabal as FromCabal
+import Distribution.Nixpkgs.Haskell.PackageSourceSpec as PackageSourceSpec
 import Language.Nix
 import Language.Nix.PrettyPrinting
-
-data StackConfig = StackConfig
-  { stackageVersion :: String }
+import Stack.Config
 
 data OverrideConfig = OverrideConfig
   { stackageCompilerConfig :: FilePath
@@ -58,3 +66,46 @@ nixpkgsOverride OverrideConfig {..} = vcat
     , text "in packageOverrides nixpkgs"
     ]
   ]
+
+-- TODO: maybe move to module Stack.Derivation
+
+newtype HackageDb = HackageDb { fromHackageDB :: T.Text }
+  deriving (Eq, Ord, Show)
+
+makePrisms ''HackageDb
+
+unHackageDb :: HackageDb -> String
+unHackageDb = T.unpack . fromHackageDB
+
+-- Thin wrapper around private stack2nix 'PackageSourceSpec.fromDB' method.
+getPackageFromDb
+  :: Maybe HackageDb
+  -> StackExtraDep
+  -> IO Package
+getPackageFromDb optHackageDb stackExtraDep =
+  PackageSourceSpec.getPackage (unHackageDb <$> optHackageDb) (extraDepToSource stackExtraDep)
+
+extraDepToSource :: StackExtraDep -> Source
+extraDepToSource sed = Source{..}
+  where
+    sourceUrl      = "cabal://" ++ unExtraDep sed
+    sourceRevision = mempty
+    sourceHash     = UnknownHash
+
+extraDepDerivation
+  :: Maybe HackageDb
+  -> System.Platform
+  -> Compiler.CompilerInfo
+  -> PackageDescription.FlagAssignment
+  -> StackExtraDep
+  -> IO Derivation
+extraDepDerivation optHackageDb optPlatform optCompilerInfo optFlagAssignment sed =
+  FromCabal.fromGenericPackageDescription
+  (const True)
+  (\i -> Just (binding # (i, path # [i])))
+  optPlatform
+  optCompilerInfo
+  optFlagAssignment
+  []
+  . pkgCabal
+  <$> getPackageFromDb optHackageDb sed
