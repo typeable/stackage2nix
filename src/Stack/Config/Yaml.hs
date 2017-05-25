@@ -58,6 +58,6 @@ makeLenses ''Config
 instance FromJSON Config where
   parseJSON = withObject "Config" $ \v ->
     Config <$>
-    v .: "resolver" <*>
-    v .: "packages" <*>
-    v .: "extra-deps"
+    v .:  "resolver"          <*>
+    v .:? "packages"   .!= [] <*>
+    v .:? "extra-deps" .!= []

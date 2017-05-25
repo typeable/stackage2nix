@@ -5,9 +5,12 @@
 module Stack.Config where
 
 import Control.Lens
+import Data.Bifunctor
+import Data.ByteString as BS
 import Data.Coerce
 import Data.Maybe
 import Data.Text as T
+import Data.Yaml
 import Stack.Config.Yaml as Yaml
 
 newtype StackResolver = StackResolver { fromStackResolver :: Text }
@@ -76,3 +79,7 @@ fromYamlGit yg = RepoGit{..}
   where
     _rgUri = yg ^. gGit
     _rgCommit = yg ^. gCommit
+
+readStackConfig :: FilePath -> IO (Either String StackConfig)
+readStackConfig stackYaml =
+  second fromYamlConfig . decodeEither <$> BS.readFile stackYaml

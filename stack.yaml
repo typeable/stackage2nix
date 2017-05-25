@@ -1,3 +1,6 @@
 resolver: lts-8.15
 packages:
 - '.'
+extra-deps:
+- list-t-1
+- type-fun-0.1.1

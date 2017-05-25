@@ -1,14 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Stack.YamlSpec where
+module Stack.Config.YamlSpec where
 
 import Data.ByteString
 import Data.Text.Encoding as T
 import Data.Yaml as Y
-import Stack.Yaml
+import Stack.Config.Yaml
 import Test.Hspec
 import Text.Shakespeare.Text
+
+configYamlMinimal :: ByteString
+configYamlMinimal = T.encodeUtf8 [st|
+resolver: lts-8.15
+packages:
+- '.'
+|]
 
 configYaml :: ByteString
 configYaml = T.encodeUtf8 [st|
@@ -25,6 +32,13 @@ packages:
 extra-deps:
 - acme-missiles-0.3
 |]
+
+configMinimal :: Config
+configMinimal = Config
+  { _cResolver  = "lts-8.15"
+  , _cPackages  = [ Simple "." ]
+  , _cExtraDeps = []
+  }
 
 config :: Config
 config = Config
@@ -43,6 +57,8 @@ config = Config
   }
 
 spec :: Spec
-spec = describe "Config" $
-  it "parsed" $
+spec = describe "Parse" $ do
+  specify "config-minimal" $
+    (Y.decode configYamlMinimal :: Maybe Config) `shouldBe` Just configMinimal
+  specify "config-full" $
     (Y.decode configYaml :: Maybe Config) `shouldBe` Just config

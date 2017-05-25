@@ -83,10 +83,10 @@ getPackageFromDb
   -> StackExtraDep
   -> IO Package
 getPackageFromDb optHackageDb stackExtraDep =
-  PackageSourceSpec.getPackage (unHackageDb <$> optHackageDb) (extraDepToSource stackExtraDep)
+  PackageSourceSpec.getPackage (unHackageDb <$> optHackageDb) (sourceFromExtraDep stackExtraDep)
 
-extraDepToSource :: StackExtraDep -> Source
-extraDepToSource sed = Source{..}
+sourceFromExtraDep :: StackExtraDep -> Source
+sourceFromExtraDep sed = Source{..}
   where
     sourceUrl      = "cabal://" ++ unExtraDep sed
     sourceRevision = mempty
@@ -95,17 +95,18 @@ extraDepToSource sed = Source{..}
 extraDepDerivation
   :: Maybe HackageDb
   -> System.Platform
-  -> Compiler.CompilerInfo
+  -> Compiler.CompilerId
   -> PackageDescription.FlagAssignment
   -> StackExtraDep
   -> IO Derivation
-extraDepDerivation optHackageDb optPlatform optCompilerInfo optFlagAssignment sed =
-  FromCabal.fromGenericPackageDescription
-  (const True)
-  (\i -> Just (binding # (i, path # [i])))
-  optPlatform
-  optCompilerInfo
-  optFlagAssignment
-  []
-  . pkgCabal
-  <$> getPackageFromDb optHackageDb sed
+extraDepDerivation optHackageDb optPlatform optCompilerId optFlagAssignment sed = do
+  pkg <- getPackageFromDb optHackageDb sed
+  pure $ FromCabal.fromGenericPackageDescription
+    (const True)
+    (\i -> Just (binding # (i, path # [i])))
+    optPlatform
+    (unknownCompilerInfo optCompilerId NoAbiTag)
+    optFlagAssignment
+    []
+    (pkgCabal pkg)
+    & src .~ pkgSource pkg
