@@ -10,27 +10,29 @@ import Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting as PP
 import Language.Nix.PrettyPrinting as PP
 
 
-overrideExtraDeps :: [Derivation] -> Doc
-overrideExtraDeps deps = PP.packageSetConfig . PP.cat $ callPackage <$> deps
+overridePackages :: [Derivation] -> Doc
+overridePackages deps = PP.packageSetConfig . PP.cat $ callPackage <$> deps
   where
     drvNameString = PP.doubleQuotes . disp . pkgName . view pkgid
     callPackage drv = vcat
       [ drvNameString drv <> " = callPackage",
         nest 2 (PP.parens $ PP.pPrint drv) <+> "{};"]
 
-overrideHaskellPackages :: [Derivation] -> Doc -> Doc
-overrideHaskellPackages extraDeps ghc = vcat
+overrideHaskellPackages :: Doc -> [Derivation] -> Doc
+overrideHaskellPackages ghc packages = vcat
   [ funargs ["nixpkgs ? import <nixpkgs> {}"]
   , ""
   , "with nixpkgs;"
   , "let"
   , nest 2 $ vcat
     [ "extraDepsPackages ="
-    , overrideExtraDeps extraDeps <> semi
+    , nest 2 $ overridePackages packages <> semi
+    , ""
     , "pkgOverrides = self: extraDepsPackages {"
     , nest 2 "inherit pkgs stdenv;"
     , nest 2 "inherit (self) callPackage;"
     , "};"
+    , ""
     ]
   , "in pkgs.haskell.packages." <> ghc <> ".override {"
   , nest 2 $ vcat

@@ -23,8 +23,7 @@ run :: IO ()
 run = do
   Options{..} <- execParser pinfo
   stackYaml <- either fail pure =<< readStackConfig optStackYaml
-  derivations <- traverse (extraDepDerivation optHackageDb optPlatform optCompilerId (readFlagList optFlags))
-    $ stackYaml ^. scExtraDeps
-  let out = PP.overrideHaskellPackages derivations (PP.text "ghc802")
+  packages <- traverse (packageDerivation optHackageDb optPlatform optCompilerId (readFlagList optFlags))
+    $ stackYaml ^. scPackages
+  let out = PP.overrideHaskellPackages (PP.text "ghc802") packages
   print out
-  --print $ nixpkgsOverride overrideConfigFixture

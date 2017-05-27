@@ -29,31 +29,23 @@ data RepoGit = RepoGit
 makeLenses ''RepoGit
 
 data StackLocation
-  = StackPath Text
+  = HackagePackage Text
+  | StackPath Text
   | StackRepoGit RepoGit
   deriving (Eq, Ord, Show)
 
 makePrisms ''StackLocation
 
 data StackPackage = StackPackage
-  { _spLocation :: StackLocation
+  { _spSource   :: StackLocation
   , _spExtraDep :: Bool
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackPackage
 
-newtype StackExtraDep = StackExtraDep { fromStackExtraDep :: Text }
-  deriving (Eq, Ord, Show)
-
-makePrisms ''StackExtraDep
-
-unExtraDep :: StackExtraDep -> String
-unExtraDep = T.unpack . fromStackExtraDep
-
 data StackConfig = StackConfig
   { _scResolver  :: StackResolver
   , _scPackages  :: [StackPackage]
-  , _scExtraDeps :: [StackExtraDep]
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackConfig
@@ -62,8 +54,9 @@ fromYamlConfig :: Yaml.Config -> StackConfig
 fromYamlConfig c = StackConfig{..}
   where
     _scResolver = coerce $ c ^. cResolver
-    _scPackages = fromYamlPackage <$> c ^. cPackages
-    _scExtraDeps = StackExtraDep <$> c ^. cExtraDeps
+    _scPackages =
+      (fromYamlPackage <$> c ^. cPackages) ++
+      (fromYamlExtraDep <$> c ^. cExtraDeps)
 
 fromYamlPackage :: Yaml.Package -> StackPackage
 fromYamlPackage = \case
@@ -73,6 +66,9 @@ fromYamlPackage = \case
     StackPackage (StackPath path) (fromMaybe False extraDep)
   Yaml.LocationGit (Location git extraDep) ->
     StackPackage (StackRepoGit $ fromYamlGit git) (fromMaybe False extraDep)
+
+fromYamlExtraDep :: Text -> StackPackage
+fromYamlExtraDep = flip StackPackage True . HackagePackage
 
 fromYamlGit :: Yaml.Git -> RepoGit
 fromYamlGit yg = RepoGit{..}

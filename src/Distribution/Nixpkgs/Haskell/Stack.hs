@@ -1,6 +1,7 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Distribution.Nixpkgs.Haskell.Stack where
 
@@ -78,35 +79,46 @@ unHackageDb :: HackageDb -> String
 unHackageDb = T.unpack . fromHackageDB
 
 -- Thin wrapper around private stack2nix 'PackageSourceSpec.fromDB' method.
-getPackageFromDb
+getStackPackageFromDb
   :: Maybe HackageDb
-  -> StackExtraDep
+  -> StackPackage
   -> IO Package
-getPackageFromDb optHackageDb stackExtraDep =
-  PackageSourceSpec.getPackage (unHackageDb <$> optHackageDb) (sourceFromExtraDep stackExtraDep)
+getStackPackageFromDb optHackageDb stackPackage =
+  PackageSourceSpec.getPackage
+    (unHackageDb <$> optHackageDb)
+    (stackLocationToSource $ stackPackage ^. spSource)
 
-sourceFromExtraDep :: StackExtraDep -> Source
-sourceFromExtraDep sed = Source{..}
-  where
-    sourceUrl      = "cabal://" ++ unExtraDep sed
-    sourceRevision = mempty
-    sourceHash     = UnknownHash
+stackLocationToSource :: StackLocation -> Source
+stackLocationToSource = \case
+  HackagePackage p -> Source
+    { sourceUrl      = "cabal://" ++ T.unpack p
+    , sourceRevision = mempty
+    , sourceHash     = UnknownHash }
+  StackPath p     -> Source
+    { sourceUrl      = T.unpack p
+    , sourceRevision = mempty
+    , sourceHash     = UnknownHash }
+  StackRepoGit rg -> Source
+    { sourceUrl      = T.unpack $ rg ^. rgUri
+    , sourceRevision = T.unpack $ rg ^. rgCommit
+    , sourceHash     = UnknownHash }
 
-extraDepDerivation
+packageDerivation
   :: Maybe HackageDb
   -> System.Platform
   -> Compiler.CompilerId
   -> PackageDescription.FlagAssignment
-  -> StackExtraDep
+  -> StackPackage
   -> IO Derivation
-extraDepDerivation optHackageDb optPlatform optCompilerId optFlagAssignment sed = do
-  pkg <- getPackageFromDb optHackageDb sed
-  pure $ FromCabal.fromGenericPackageDescription
-    (const True)
-    (\i -> Just (binding # (i, path # [i])))
-    optPlatform
-    (unknownCompilerInfo optCompilerId NoAbiTag)
-    optFlagAssignment
-    []
-    (pkgCabal pkg)
+packageDerivation optHackageDb optPlatform optCompilerId optFlagAssignment sed = do
+  pkg <- getStackPackageFromDb optHackageDb sed
+  pure
+    $ FromCabal.fromGenericPackageDescription
+      (const True)
+      (\i -> Just (binding # (i, path # [i])))
+      optPlatform
+      (unknownCompilerInfo optCompilerId NoAbiTag)
+      optFlagAssignment
+      []
+      (pkgCabal pkg)
     & src .~ pkgSource pkg
