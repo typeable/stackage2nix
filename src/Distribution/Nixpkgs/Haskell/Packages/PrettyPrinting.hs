@@ -12,7 +12,9 @@ packageSetConfig :: Doc -> Doc
 packageSetConfig body = vcat
   [ funargs ["pkgs", "stdenv", "callPackage"]
   , ""
-  , funarg "self" <+> body ]
+  , funargsCurried ["self"] <+> "{"
+  , nest 2 body
+  , "}"]
 
 overrides :: Doc -> Doc
 overrides body = funargsCurried ["self", "super"] <+> body
