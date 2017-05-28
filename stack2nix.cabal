@@ -13,20 +13,24 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Cli
-                     , Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting
+  exposed-modules:     Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting
                      , Distribution.Nixpkgs.Haskell.Stack
                      , Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting
+                     , Language.Nix.FilePath
                      , Runner
+                     , Runner.Cli
                      , Stack.Config
                      , Stack.Config.Yaml
                      , Stack.Types
   build-depends:       base > 4.7 && < 5
                      , Cabal > 1.24 && < 1.25
+                     , QuickCheck > 2.9 && < 2.10
                      , aeson > 1.0 && < 1.1
                      , bytestring > 0.10 && < 0.11
                      , cabal2nix > 2.0 && < 2.1
+                     , deepseq > 1.4 && < 1.5
                      , distribution-nixpkgs > 1 && < 1.1
+                     , filepath
                      , language-nix > 2.1 && < 2.2
                      , lens > 4.15 && < 4.16
                      , optparse-applicative > 0.13 && < 0.14

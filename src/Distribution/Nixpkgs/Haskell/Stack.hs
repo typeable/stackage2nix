@@ -35,13 +35,13 @@ data PackageConfig = PackageConfig
 
 makeLenses ''PackageConfig
 
-mkPackageConfig :: Platform -> CompilerId -> FlagAssignment -> PackageConfig
-mkPackageConfig platform compilerId flagAssignment = PackageConfig
+mkPackageConfig :: Platform -> CompilerId -> PackageConfig
+mkPackageConfig platform compilerId = PackageConfig
   { _pcHaskellResolver = const True
   , _pcNixpkgsResolver = \i -> Just (binding # (i, path # [i]))
   , _pcTargetPlatform  = platform
   , _pcTargetCompiler  = unknownCompilerInfo compilerId NoAbiTag
-  , _pcFlagAssignment  = flagAssignment
+  , _pcFlagAssignment  = []
   }
 
 -- Thin wrapper around private stack2nix 'PackageSourceSpec.fromDB' method.
