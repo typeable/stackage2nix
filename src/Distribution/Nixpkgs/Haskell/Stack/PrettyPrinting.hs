@@ -14,9 +14,9 @@ overridePackages :: [Derivation] -> Doc
 overridePackages deps = PP.packageSetConfig . PP.cat $ callPackage <$> deps
   where
     drvNameString = PP.doubleQuotes . disp . pkgName . view pkgid
-    callPackage drv = vcat
-      [ drvNameString drv <> " = callPackage",
-        nest 2 (PP.parens $ PP.pPrint drv) <+> "{};"]
+    callPackage drv = hang
+      (drvNameString drv <> " = callPackage") 2
+      (PP.parens (PP.pPrint drv) <+> "{};")
 
 overrideHaskellPackages :: Doc -> [Derivation] -> Doc
 overrideHaskellPackages ghc packages = vcat
@@ -25,10 +25,10 @@ overrideHaskellPackages ghc packages = vcat
   , "with nixpkgs;"
   , "let"
   , nest 2 $ vcat
-    [ "extraDepsPackages ="
+    [ "packageSetConfig ="
     , nest 2 $ overridePackages packages <> semi
     , ""
-    , "pkgOverrides = self: extraDepsPackages {"
+    , "pkgOverrides = self: packageSetConfig {"
     , nest 2 "inherit pkgs stdenv;"
     , nest 2 "inherit (self) callPackage;"
     , "};"
