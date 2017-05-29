@@ -44,7 +44,6 @@ mkPackageConfig platform compilerId = PackageConfig
   , _pcFlagAssignment  = []
   }
 
--- Thin wrapper around private stack2nix 'PackageSourceSpec.fromDB' method.
 getStackPackageFromDb
   :: Maybe HackageDb
   -> StackPackage
