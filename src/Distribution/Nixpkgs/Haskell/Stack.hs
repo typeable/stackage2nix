@@ -58,15 +58,19 @@ stackLocationToSource = \case
   HackagePackage p -> Source
     { sourceUrl      = "cabal://" ++ T.unpack p
     , sourceRevision = mempty
-    , sourceHash     = UnknownHash }
+    , sourceHash     = UnknownHash
+    , sourceCabalDir = mempty }
   StackPath p     -> Source
     { sourceUrl      = T.unpack p
     , sourceRevision = mempty
-    , sourceHash     = UnknownHash }
+    , sourceHash     = UnknownHash
+    , sourceCabalDir = mempty }
+
   StackRepoGit rg -> Source
     { sourceUrl      = T.unpack $ rg ^. rgUri
     , sourceRevision = T.unpack $ rg ^. rgCommit
-    , sourceHash     = UnknownHash }
+    , sourceHash     = UnknownHash
+    , sourceCabalDir = mempty }
 
 packageDerivation
   :: PackageConfig
