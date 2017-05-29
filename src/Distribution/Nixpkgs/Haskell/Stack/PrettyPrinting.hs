@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting where
@@ -15,22 +15,21 @@ import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
 
 data OverrideConfig = OverrideConfig
-  { _ocGhc :: String
+  { _ocGhc              :: String
   , _ocStackagePackages :: Maybe FilePath
-  , _ocStackageConfig :: Maybe FilePath
-  }
+  , _ocStackageConfig   :: Maybe FilePath }
 
 makeLenses ''OverrideConfig
 
-hasField :: Lens' OverrideConfig (Maybe a) -> OverrideConfig -> Bool
+hasField :: Lens' a (Maybe b) -> a -> Bool
 hasField p = views p isJust
 
 overridePackages :: [Derivation] -> Doc
-overridePackages deps = PP.packageSetConfig . PP.cat $ callPackage <$> deps
+overridePackages = PP.packageSetConfig . PP.cat . fmap callPackage
   where
-    drvNameString = PP.doubleQuotes . disp . pkgName . view pkgid
+    drvNameQuoted   = PP.doubleQuotes . disp . pkgName . view pkgid
     callPackage drv = hang
-      (drvNameString drv <> " = callPackage") 2
+      (drvNameQuoted drv <> " = callPackage") 2
       (PP.parens (PP.pPrint drv) <+> "{};")
 
 importStackagePackages :: FilePath -> Doc
