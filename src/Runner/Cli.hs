@@ -15,20 +15,20 @@ import           Stack.Config
 import           Stack.Types
 
 
-newtype StackagePackages = StackagePackages { fromStackagePackages :: FilePath }
+newtype StackagePackages = StackagePackages { unStackagePackages :: FilePath }
   deriving (Show)
 
 makePrisms ''StackagePackages
 
-newtype StackageConfig = StackageConfig { fromStackageConfig :: FilePath }
+newtype StackageConfig = StackageConfig { unStackageConfig :: FilePath }
   deriving (Show)
 
 makePrisms ''StackageConfig
 
 data Options = Options
   { _optHackageDb        :: Maybe HackageDb
-  , _optStackagePackages :: StackagePackages
-  , _optStackageConfig   :: StackageConfig
+  , _optStackagePackages :: Maybe StackagePackages
+  , _optStackageConfig   :: Maybe StackageConfig
   , _optCompilerId       :: CompilerId
   , _optPlatform         :: Platform
   , _optStackYaml        :: FilePath
@@ -39,8 +39,8 @@ makeLenses ''Options
 options :: Parser Options
 options = Options
   <$> optional hackageDb
-  <*> stackagePackages
-  <*> stackageConfig
+  <*> optional stackagePackages
+  <*> optional stackageConfig
   <*> compilerId
   <*> platform
   <*> stackYamlArg

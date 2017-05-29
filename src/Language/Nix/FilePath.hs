@@ -26,7 +26,7 @@ instance NFData FilePath where
   rnf = rnf . unFilePath
 
 instance Arbitrary FilePath where
-  arbitrary = FilePath <$> arbitrary
+  arbitrary = FilePath <$> QC.suchThat arbitrary Posix.isValid
   shrink = fmap FilePath . shrink . unFilePath
 
 instance Text FilePath where
