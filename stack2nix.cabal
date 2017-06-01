@@ -20,6 +20,7 @@ library
                      , Runner
                      , Runner.Cli
                      , Stack.Config
+                     , Stack.Config.TH
                      , Stack.Config.Yaml
                      , Stack.Types
   build-depends:       base > 4.7 && < 5
@@ -31,8 +32,10 @@ library
                      , deepseq
                      , distribution-nixpkgs >= 1.1
                      , filepath
+                     , inflections
                      , language-nix
                      , lens
+                     , network-uri
                      , optparse-applicative
                      , pretty
                      , text

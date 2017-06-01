@@ -36,14 +36,14 @@ extra-deps:
 configMinimal :: Config
 configMinimal = Config
   { _cResolver  = "lts-8.15"
-  , _cPackages  = [ Simple "." ]
-  , _cExtraDeps = []
+  , _cPackages  = Just [ Simple "." ]
+  , _cExtraDeps = Nothing
   }
 
 config :: Config
 config = Config
   { _cResolver = "lts-3.7"
-  , _cPackages =
+  , _cPackages = Just
     [ Simple "."
     , LocationSimple (Location "dir1/dir2" Nothing)
     , LocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True))
@@ -52,7 +52,7 @@ config = Config
         "git@github.com:commercialhaskell/stack.git"
         "6a86ee32e5b869a877151f74064572225e1a0398")
        Nothing]
-  , _cExtraDeps =
+  , _cExtraDeps = Just
     ["acme-missiles-0.3"]
   }
 

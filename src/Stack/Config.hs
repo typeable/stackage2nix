@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Stack.Config where
 
@@ -12,6 +13,7 @@ import Data.Maybe
 import Data.Text as T
 import Data.Yaml
 import Stack.Config.Yaml as Yaml
+import Network.URI
 
 newtype StackResolver = StackResolver { fromStackResolver :: Text }
   deriving (Eq, Ord, Show)
@@ -28,16 +30,17 @@ data RepoGit = RepoGit
 
 makeLenses ''RepoGit
 
-data StackLocation
+data PackageLocation
   = HackagePackage Text
-  | StackPath Text
+  | StackFilePath FilePath
+  | StackUri URI
   | StackRepoGit RepoGit
   deriving (Eq, Ord, Show)
 
-makePrisms ''StackLocation
+makePrisms ''PackageLocation
 
 data StackPackage = StackPackage
-  { _spSource   :: StackLocation
+  { _spLocation :: PackageLocation
   , _spExtraDep :: Bool
   } deriving (Eq, Ord, Show)
 
@@ -55,17 +58,19 @@ fromYamlConfig c = StackConfig{..}
   where
     _scResolver = coerce $ c ^. cResolver
     _scPackages =
-      (fromYamlPackage <$> c ^. cPackages) ++
-      (fromYamlExtraDep <$> c ^. cExtraDeps)
+      (fromYamlPackage <$> c ^. cPackages . to (fromMaybe mempty)) ++
+      (fromYamlExtraDep <$> c ^. cExtraDeps . to (fromMaybe mempty))
 
 fromYamlPackage :: Yaml.Package -> StackPackage
 fromYamlPackage = \case
-  Yaml.Simple path                                  ->
-    StackPackage (StackPath path) False
-  Yaml.LocationSimple (Yaml.Location path extraDep) ->
-    StackPackage (StackPath path) (fromMaybe False extraDep)
-  Yaml.LocationGit (Location git extraDep) ->
+  Yaml.Simple p                                  ->
+    StackPackage (parseSimplePath p) False
+  Yaml.LocationSimple (Yaml.Location p extraDep) ->
+    StackPackage (parseSimplePath p) (fromMaybe False extraDep)
+  Yaml.LocationGit (Location git extraDep)       ->
     StackPackage (StackRepoGit $ fromYamlGit git) (fromMaybe False extraDep)
+  where
+    parseSimplePath (T.unpack -> p) = maybe (StackFilePath p) StackUri $ parseURI p
 
 fromYamlExtraDep :: Text -> StackPackage
 fromYamlExtraDep = flip StackPackage True . HackagePackage

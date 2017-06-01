@@ -1,5 +1,6 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -7,14 +8,15 @@ module Distribution.Nixpkgs.Haskell.Stack where
 
 import Control.Lens
 import Data.Text as T
-import Distribution.System as System
 import Distribution.Compiler as Compiler
-import Distribution.PackageDescription as PackageDescription
 import Distribution.Nixpkgs.Fetch
 import Distribution.Nixpkgs.Haskell.Derivation
 import Distribution.Nixpkgs.Haskell.FromCabal as FromCabal
 import Distribution.Nixpkgs.Haskell.PackageSourceSpec as PackageSourceSpec
-import Language.Nix
+import Distribution.PackageDescription as PackageDescription
+import Distribution.System as System
+import Language.Nix as Nix
+import Network.URI as URI
 import Stack.Config
 
 newtype HackageDb = HackageDb { fromHackageDB :: T.Text }
@@ -38,7 +40,7 @@ makeLenses ''PackageConfig
 mkPackageConfig :: Platform -> CompilerId -> PackageConfig
 mkPackageConfig platform compilerId = PackageConfig
   { _pcHaskellResolver = const True
-  , _pcNixpkgsResolver = \i -> Just (binding # (i, path # [i]))
+  , _pcNixpkgsResolver = \i -> Just (Nix.binding # (i, Nix.path # [i]))
   , _pcTargetPlatform  = platform
   , _pcTargetCompiler  = unknownCompilerInfo compilerId NoAbiTag
   , _pcFlagAssignment  = []
@@ -51,22 +53,26 @@ getStackPackageFromDb
 getStackPackageFromDb optHackageDb stackPackage =
   PackageSourceSpec.getPackage
     (unHackageDb <$> optHackageDb)
-    (stackLocationToSource $ stackPackage ^. spSource)
+    (stackLocationToSource $ stackPackage ^. spLocation)
 
-stackLocationToSource :: StackLocation -> Source
+stackLocationToSource :: PackageLocation -> Source
 stackLocationToSource = \case
   HackagePackage p -> Source
     { sourceUrl      = "cabal://" ++ T.unpack p
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = mempty }
-  StackPath p     -> Source
-    { sourceUrl      = T.unpack p
+  StackFilePath p  -> Source
+    { sourceUrl      = p
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = mempty }
-
-  StackRepoGit rg -> Source
+  StackUri uri     -> Source
+    { sourceUrl      = URI.uriToString id uri mempty
+    , sourceRevision = mempty
+    , sourceHash     = UnknownHash
+    , sourceCabalDir = mempty }
+  StackRepoGit rg  -> Source
     { sourceUrl      = T.unpack $ rg ^. rgUri
     , sourceRevision = T.unpack $ rg ^. rgCommit
     , sourceHash     = UnknownHash

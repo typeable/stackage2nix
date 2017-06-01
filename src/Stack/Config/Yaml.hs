@@ -1,12 +1,15 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Stack.Config.Yaml where
 
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Text as T
+import Stack.Config.TH
 
 data Location a = Location
   { _lLocation :: a
@@ -15,11 +18,7 @@ data Location a = Location
 
 makeLenses ''Location
 
-instance FromJSON a => FromJSON (Location a) where
-  parseJSON = withObject "Location" $ \v ->
-    Location <$>
-    v .: "location" <*>
-    v .:? "extra-dep"
+deriveJSON jsonOpts ''Location
 
 data Git = Git
   { _gGit    :: Text
@@ -28,17 +27,14 @@ data Git = Git
 
 makeLenses ''Git
 
-instance FromJSON Git where
-  parseJSON = withObject "Git" $ \v ->
-    Git <$>
-    v .: "git" <*>
-    v .: "commit"
+deriveJSON jsonOpts ''Git
 
 data Package
   = Simple Text
   | LocationSimple (Location Text)
   | LocationGit (Location Git)
   deriving (Eq, Show)
+
 makePrisms ''Package
 
 instance FromJSON Package where
@@ -47,17 +43,18 @@ instance FromJSON Package where
     (LocationSimple <$> parseJSON v) <|>
     (LocationGit <$> parseJSON v)
 
+instance ToJSON Package where
+  toJSON = \case
+    Simple t         -> toJSON t
+    LocationSimple t -> toJSON t
+    LocationGit t    -> toJSON t
+
 data Config = Config
   { _cResolver  :: Text
-  , _cPackages  :: [Package]
-  , _cExtraDeps :: [Text]
+  , _cPackages  :: Maybe [Package]
+  , _cExtraDeps :: Maybe [Text]
   } deriving (Eq, Show)
 
 makeLenses ''Config
 
-instance FromJSON Config where
-  parseJSON = withObject "Config" $ \v ->
-    Config <$>
-    v .:  "resolver"          <*>
-    v .:? "packages"   .!= [] <*>
-    v .:? "extra-deps" .!= []
+deriveJSON jsonOpts ''Config
