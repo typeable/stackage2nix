@@ -26,12 +26,12 @@ newtype StackageConfig = StackageConfig { unStackageConfig :: FilePath }
 makePrisms ''StackageConfig
 
 data Options = Options
-  { _optHackageDb        :: Maybe HackageDb
-  , _optStackagePackages :: Maybe StackagePackages
-  , _optStackageConfig   :: Maybe StackageConfig
-  , _optCompilerId       :: CompilerId
-  , _optPlatform         :: Platform
-  , _optStackYaml        :: FilePath
+  { _optHackageDb        :: !(Maybe HackageDb)
+  , _optStackagePackages :: !(Maybe StackagePackages)
+  , _optStackageConfig   :: !(Maybe StackageConfig)
+  , _optCompilerId       :: !CompilerId
+  , _optPlatform         :: !Platform
+  , _optStackYaml        :: !FilePath
   } deriving (Show)
 
 makeLenses ''Options

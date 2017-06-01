@@ -28,11 +28,11 @@ unHackageDb :: HackageDb -> String
 unHackageDb = T.unpack . fromHackageDB
 
 data PackageConfig = PackageConfig
-  { _pcHaskellResolver :: HaskellResolver
-  , _pcNixpkgsResolver :: NixpkgsResolver
-  , _pcTargetPlatform  :: Platform
-  , _pcTargetCompiler  :: CompilerInfo
-  , _pcFlagAssignment  :: FlagAssignment
+  { _pcHaskellResolver :: !HaskellResolver
+  , _pcNixpkgsResolver :: !NixpkgsResolver
+  , _pcTargetPlatform  :: !Platform
+  , _pcTargetCompiler  :: !CompilerInfo
+  , _pcFlagAssignment  :: !FlagAssignment
   }
 
 makeLenses ''PackageConfig

@@ -24,8 +24,8 @@ unStackResolver :: StackResolver -> String
 unStackResolver = T.unpack . fromStackResolver
 
 data RepoGit = RepoGit
-  { _rgUri    :: Text
-  , _rgCommit :: Text
+  { _rgUri    :: !Text
+  , _rgCommit :: !Text
   } deriving (Eq, Ord, Show)
 
 makeLenses ''RepoGit
@@ -40,15 +40,15 @@ data PackageLocation
 makePrisms ''PackageLocation
 
 data StackPackage = StackPackage
-  { _spLocation :: PackageLocation
-  , _spExtraDep :: Bool
+  { _spLocation :: !PackageLocation
+  , _spExtraDep :: !Bool
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackPackage
 
 data StackConfig = StackConfig
-  { _scResolver  :: StackResolver
-  , _scPackages  :: [StackPackage]
+  { _scResolver  :: !StackResolver
+  , _scPackages  :: ![StackPackage]
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackConfig

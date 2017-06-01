@@ -12,8 +12,8 @@ import Data.Text as T
 import Stack.Config.TH
 
 data Location a = Location
-  { _lLocation :: a
-  , _lExtraDep :: Maybe Bool
+  { _lLocation :: !a
+  , _lExtraDep :: !(Maybe Bool)
   } deriving (Eq, Show)
 
 makeLenses ''Location
@@ -21,8 +21,8 @@ makeLenses ''Location
 deriveJSON jsonOpts ''Location
 
 data Git = Git
-  { _gGit    :: Text
-  , _gCommit :: Text
+  { _gGit    :: !Text
+  , _gCommit :: !Text
   } deriving (Eq, Show)
 
 makeLenses ''Git
@@ -50,9 +50,9 @@ instance ToJSON Package where
     LocationGit t    -> toJSON t
 
 data Config = Config
-  { _cResolver  :: Text
-  , _cPackages  :: Maybe [Package]
-  , _cExtraDeps :: Maybe [Text]
+  { _cResolver  :: !Text
+  , _cPackages  :: !(Maybe [Package])
+  , _cExtraDeps :: !(Maybe [Text])
   } deriving (Eq, Show)
 
 makeLenses ''Config

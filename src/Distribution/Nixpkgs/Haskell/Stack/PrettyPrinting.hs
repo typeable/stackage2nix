@@ -15,9 +15,9 @@ import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
 
 data OverrideConfig = OverrideConfig
-  { _ocGhc              :: String
-  , _ocStackagePackages :: Maybe FilePath
-  , _ocStackageConfig   :: Maybe FilePath }
+  { _ocGhc              :: !String
+  , _ocStackagePackages :: !(Maybe FilePath)
+  , _ocStackageConfig   :: !(Maybe FilePath) }
 
 makeLenses ''OverrideConfig
 
