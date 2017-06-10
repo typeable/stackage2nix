@@ -26,7 +26,8 @@ newtype StackageConfig = StackageConfig { unStackageConfig :: FilePath }
 makePrisms ''StackageConfig
 
 data Options = Options
-  { _optHackageDb        :: !(Maybe HackageDb)
+  { _optOutFile          :: !FilePath
+  , _optHackageDb        :: !(Maybe HackageDb)
   , _optStackagePackages :: !(Maybe StackagePackages)
   , _optStackageConfig   :: !(Maybe StackageConfig)
   , _optCompilerId       :: !CompilerId
@@ -38,7 +39,8 @@ makeLenses ''Options
 
 options :: Parser Options
 options = Options
-  <$> optional hackageDb
+  <$> outFile
+  <*> optional hackageDb
   <*> optional stackagePackages
   <*> optional stackageConfig
   <*> compilerId
@@ -51,6 +53,13 @@ pinfo = info
   <*> options )
   (  fullDesc
   <> header "stack2nix converts Stack files into build instructions for Nix." )
+
+outFile :: Parser FilePath
+outFile = option str
+  ( long "nix-out-file"
+    <> metavar "NIX_OUT_FILE"
+    <> help "path where to write output derivation"
+    <> value "default.nix" )
 
 stackResolver :: Parser StackResolver
 stackResolver = StackResolver <$>

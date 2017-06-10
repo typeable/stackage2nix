@@ -19,7 +19,8 @@ run = do
     $ stackYaml ^. scPackages
   let
     out = PP.overrideHaskellPackages overrideConfig packages
-  print out
+  writeFile (opts ^. optOutFile) (show out)
+  putStrLn $ "\nDerivation was written to " ++ opts ^. optOutFile
 
 mkOverrideConfig :: Options -> OverrideConfig
 mkOverrideConfig opts = OverrideConfig
