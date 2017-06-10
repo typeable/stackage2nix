@@ -1,4 +1,4 @@
-module Runner where
+module Runner ( run ) where
 
 import Control.Lens
 import Distribution.Nixpkgs.Haskell.Stack
@@ -14,12 +14,15 @@ run = do
   stackYaml <- either fail pure =<< readStackConfig (opts ^. optStackYaml)
   let
     pkgConfig = mkPackageConfig (opts ^. optPlatform) (opts ^. optCompilerId)
-    overrideConfig = OverrideConfig
-      { _ocGhc = "ghc802"
-      , _ocStackagePackages = unStackagePackages <$> opts ^. optStackagePackages
-      , _ocStackageConfig = unStackageConfig <$> opts ^. optStackageConfig }
+    overrideConfig = mkOverrideConfig opts
   packages <- traverse (packageDerivation pkgConfig (opts ^. optHackageDb))
     $ stackYaml ^. scPackages
   let
     out = PP.overrideHaskellPackages overrideConfig packages
   print out
+
+mkOverrideConfig :: Options -> OverrideConfig
+mkOverrideConfig opts = OverrideConfig
+  { _ocGhc = "ghc802"
+  , _ocStackagePackages = unStackagePackages <$> opts ^. optStackagePackages
+  , _ocStackageConfig = unStackageConfig <$> opts ^. optStackageConfig }

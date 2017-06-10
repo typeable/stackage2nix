@@ -3,7 +3,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/4e6/cabal2nix.git
-    commit: 94a709c1d01e2c5ad2680be918566f24ab0b1099
+    commit: 7df95c029fb2e33dc9176796e5055bd6c5175ed3
   extra-dep: true
 extra-deps:
 - distribution-nixpkgs-1.1
