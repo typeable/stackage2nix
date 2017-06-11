@@ -14,10 +14,11 @@ import           Distribution.Text
 import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
 
+
 data OverrideConfig = OverrideConfig
   { _ocGhc              :: !String
-  , _ocStackagePackages :: !(Maybe FilePath)
-  , _ocStackageConfig   :: !(Maybe FilePath) }
+  , _ocStackagePackages :: !FilePath
+  , _ocStackageConfig   :: !FilePath }
 
 makeLenses ''OverrideConfig
 
@@ -58,9 +59,9 @@ overrideHaskellPackages oc packages = vcat
   , "with nixpkgs;"
   , "let"
   , nest 2 "inherit (stdenv.lib) extends;"
-  , nest 2 . vcat $ catMaybes
-    [ attr "stackagePackages" . importStackagePackages <$> oc ^. ocStackagePackages
-    , attr "stackageConfig" . callStackageConfig <$> oc ^. ocStackageConfig ]
+  , nest 2 $ vcat
+    [ attr "stackagePackages" . importStackagePackages $ oc ^. ocStackagePackages
+    , attr "stackageConfig" . callStackageConfig $ oc ^. ocStackageConfig ]
   , nest 2 $ vcat
     [ "stackPackages ="
     , nest 2 $ overridePackages packages <> semi
@@ -74,8 +75,7 @@ overrideHaskellPackages oc packages = vcat
   , "in callPackage <nixpkgs/pkgs/development/haskell-modules> {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> ghc)
-    , onlyIf (hasField ocStackageConfig oc && hasField ocStackagePackages oc)
-      $ attr "compilerConfig" "self: extends stackageConfig (stackagePackages self)"
+    , attr "compilerConfig" "self: extends stackageConfig (stackagePackages self)"
     , attr "overrides" "self: pkgOverrides self"]
   , "}"
   ]
