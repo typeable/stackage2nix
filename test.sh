@@ -2,6 +2,8 @@
 
 VERSION=${VERSION:-8.15}
 
+set -x
+
 stack2nix \
   --stackage-build-plan "$HOME/projects/fpco/lts-haskell/lts-$VERSION.yaml" \
   --all-cabal-hashes "$HOME/projects/commercialhaskell/all-cabal-hashes" \

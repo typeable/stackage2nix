@@ -11,12 +11,13 @@ import           Distribution.Nixpkgs.Haskell.Derivation
 import           Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting as PP
 import           Distribution.Package
 import           Distribution.Text
+import           Distribution.Version (Version(..))
 import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
 
 
 data OverrideConfig = OverrideConfig
-  { _ocGhc              :: !String
+  { _ocGhc              :: !Version
   , _ocStackagePackages :: !FilePath
   , _ocStackageConfig   :: !FilePath }
 
@@ -74,10 +75,12 @@ overrideHaskellPackages oc packages = vcat
     ]
   , "in callPackage <nixpkgs/pkgs/development/haskell-modules> {"
   , nest 2 $ vcat
-    [ attr "ghc" ("pkgs.haskell.compiler." <> ghc)
+    [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
     , attr "compilerConfig" "self: extends stackageConfig (stackagePackages self)"
     , attr "overrides" "self: pkgOverrides self"]
   , "}"
   ]
-  where
-    ghc = oc ^. ocGhc . to text
+
+toNixGhcVersion :: Version -> Doc
+toNixGhcVersion =
+  (<>) "ghc" . text . filter (/= '.') . show . disp

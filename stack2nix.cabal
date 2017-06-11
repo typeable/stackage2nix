@@ -38,6 +38,7 @@ library
                      , network-uri
                      , optparse-applicative
                      , pretty
+                     , stackage-curator
                      , text
                      , yaml
   default-language:    Haskell2010

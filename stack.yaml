@@ -2,10 +2,11 @@ resolver: lts-8.15
 packages:
 - '.'
 - location: ../cabal2nix
+  extra-dep: true
 #- location:
     #git: https://github.com/4e6/cabal2nix.git
     #commit: 5da88077431fca9ec4d63ce3ad22cd1fe935ad93
-  extra-dep: true
+  #extra-dep: true
 extra-deps:
 - distribution-nixpkgs-1.1
 - hopenssl-2.2

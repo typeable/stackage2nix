@@ -3,9 +3,11 @@ module Runner ( run ) where
 import Control.Lens
 import Distribution.Nixpkgs.Haskell.Stack
 import Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting as PP
+import Distribution.Version (Version(..))
 import Options.Applicative
 import Runner.Cli
 import Stack.Config
+import Stackage.Types
 
 import qualified Stackage2nix as S2n
 
@@ -24,12 +26,12 @@ run = do
       , S2n.optNixpkgsMap        = Nothing
       , S2n.optOutPackages       = opts ^. optStackageOutPackages
       , S2n.optOutConfig         = opts ^. optStackageOutConfig }
-  _ <- S2n.run s2nOptions
+  buildPlan <- S2n.run s2nOptions
 
   -- generate haskell packages override
   let
     pkgConfig = mkPackageConfig (opts ^. optPlatform) (opts ^. optCompilerId)
-    overrideConfig = mkOverrideConfig opts
+    overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
   packages <- traverse (packageDerivation pkgConfig (opts ^. optHackageDb))
     $ stackYaml ^. scPackages
   let
@@ -38,8 +40,8 @@ run = do
   writeFile (opts ^. optOutFile) (show out)
   putStrLn $ "\nDerivation was written to " ++ opts ^. optOutFile
 
-mkOverrideConfig :: Options -> OverrideConfig
-mkOverrideConfig opts = OverrideConfig
-  { _ocGhc              = "ghc802"
+mkOverrideConfig :: Options -> Version -> OverrideConfig
+mkOverrideConfig opts ghcVersion = OverrideConfig
+  { _ocGhc              = ghcVersion
   , _ocStackagePackages = opts ^. optStackageOutPackages
   , _ocStackageConfig   = opts ^. optStackageOutConfig }
