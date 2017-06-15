@@ -54,8 +54,9 @@ outFile :: Parser FilePath
 outFile = option str
   ( long "nix-out-file"
     <> metavar "NIX_OUT_FILE"
-    <> help "path where to write output derivation"
-    <> value "default.nix" )
+    <> help "path to output derivation"
+    <> value "default.nix"
+    <> showDefaultWith id )
 
 nixpkgsRepository :: Parser FilePath
 nixpkgsRepository = option str
@@ -89,14 +90,16 @@ stackageOutPackages = option str
   ( long "nix-stackage-packages"
     <> metavar "STACKAGE_PACKAGES"
     <> help "name of the output file for the package set"
-    <> value "configuration-packages.nix" )
+    <> value "configuration-packages.nix"
+    <> showDefaultWith id)
 
 stackageOutConfig :: Parser FilePath
 stackageOutConfig = option str
   ( long "nix-stackage-config"
     <> metavar "STACKAGE_CONFIG"
     <> help "name of the output file for the package set configuration"
-    <> value "packages.nix" )
+    <> value "packages.nix"
+    <> showDefaultWith id)
 
 stackYamlArg :: Parser FilePath
 stackYamlArg = Opts.argument str
