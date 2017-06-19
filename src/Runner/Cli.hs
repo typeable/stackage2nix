@@ -90,7 +90,7 @@ stackageOutPackages = option str
   ( long "nix-stackage-packages"
     <> metavar "STACKAGE_PACKAGES"
     <> help "name of the output file for the package set"
-    <> value "configuration-packages.nix"
+    <> value "packages.nix"
     <> showDefaultWith id)
 
 stackageOutConfig :: Parser FilePath
@@ -98,7 +98,7 @@ stackageOutConfig = option str
   ( long "nix-stackage-config"
     <> metavar "STACKAGE_CONFIG"
     <> help "name of the output file for the package set configuration"
-    <> value "packages.nix"
+    <> value "configuration-packages.nix"
     <> showDefaultWith id)
 
 stackYamlArg :: Parser FilePath

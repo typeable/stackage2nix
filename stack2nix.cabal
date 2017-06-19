@@ -29,6 +29,7 @@ library
                      , aeson
                      , bytestring
                      , cabal2nix >= 2.3
+                     , containers
                      , deepseq
                      , distribution-nixpkgs >= 1.1
                      , filepath
