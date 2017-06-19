@@ -19,8 +19,8 @@ data Options = Options
   { _optOutFile             :: !FilePath
   , _optHackageDb           :: !(Maybe HackageDb)
   , _optNixpkgsRepository   :: !FilePath
-  , _optStackageBuildPlan   :: !FilePath
-  , _optAllCabalHashes      :: !FilePath
+  , _optAllCabalHashesPath  :: !FilePath
+  , _optLtsHaskellPath      :: !FilePath
   , _optStackageOutPackages :: !FilePath
   , _optStackageOutConfig   :: !FilePath
   , _optCompilerId          :: !CompilerId
@@ -35,8 +35,8 @@ options = Options
   <$> outFile
   <*> optional hackageDb
   <*> nixpkgsRepository
-  <*> stackageBuildPlan
-  <*> allCabalHashes
+  <*> allCabalHashesPath
+  <*> ltsHaskellPath
   <*> stackageOutPackages
   <*> stackageOutConfig
   <*> compilerId
@@ -72,11 +72,17 @@ stackageBuildPlan = option str
     <> metavar "STACKAGE_BUILD_PLAN"
     <> help "stackage build plan (YAML)" )
 
-allCabalHashes :: Parser FilePath
-allCabalHashes = option str
+allCabalHashesPath :: Parser FilePath
+allCabalHashesPath = option str
   ( long "all-cabal-hashes"
     <> metavar "ALL_CABAL_HASHES"
-    <> help "path to all-cabal-hashes repository" )
+    <> help "path to commercialhaskell/all-cabal-hashes repository" )
+
+ltsHaskellPath :: Parser FilePath
+ltsHaskellPath = option str
+  ( long "lts-haskell"
+    <> metavar "LTS_HASKELL_DIR"
+    <> help "path to fpco/lts-haskell repository" )
 
 stackResolver :: Parser StackResolver
 stackResolver = StackResolver <$>
