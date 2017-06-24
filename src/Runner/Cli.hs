@@ -11,34 +11,47 @@ import           Distribution.Nixpkgs.Haskell.Stack
 import           Distribution.System as System
 import qualified Distribution.Text as Text
 import           Options.Applicative as Opts
-import           Stack.Config
 import           Stack.Types
+import           System.Environment
+import           System.FilePath
 
 
 data Options = Options
-  { _optOutFile             :: !FilePath
+  { _optAllCabalHashesRepo  :: !FilePath
+  , _optLtsHaskellRepo      :: !FilePath
+  , _optOutStackagePackages :: !FilePath
+  , _optOutStackageConfig   :: !FilePath
+  , _optOutDerivation       :: !FilePath
   , _optHackageDb           :: !(Maybe HackageDb)
   , _optNixpkgsRepository   :: !FilePath
-  , _optAllCabalHashesPath  :: !FilePath
-  , _optLtsHaskellPath      :: !FilePath
-  , _optStackageOutPackages :: !FilePath
-  , _optStackageOutConfig   :: !FilePath
   , _optCompilerId          :: !CompilerId
   , _optPlatform            :: !Platform
-  , _optStackYaml           :: !FilePath
+  , _optStackYamlArg        :: !FilePath
   } deriving (Show)
 
 makeLenses ''Options
 
+envStackYaml :: IO (Maybe FilePath)
+envStackYaml = lookupEnv "STACK_YAML"
+
+optStackYaml :: Getter Options FilePath
+optStackYaml = optStackYamlArg . to stackYamlFile
+  where
+    stackYamlFile p = case splitFileName p of
+      (dir, "")   -> dir </> "stack.yaml"
+      (dir, ".")  -> dir </> "stack.yaml"
+      (_  , "..") -> p </> "stack.yaml"
+      _           -> p
+
 options :: Parser Options
 options = Options
-  <$> outFile
+  <$> allCabalHashesRepo
+  <*> ltsHaskellRepo
+  <*> outStackagePackages
+  <*> outStackageConfig
+  <*> outDerivation
   <*> optional hackageDb
   <*> nixpkgsRepository
-  <*> allCabalHashesPath
-  <*> ltsHaskellPath
-  <*> stackageOutPackages
-  <*> stackageOutConfig
   <*> compilerId
   <*> platform
   <*> stackYamlArg
@@ -50,14 +63,6 @@ pinfo = info
   (  fullDesc
   <> header "stack2nix converts Stack files into build instructions for Nix." )
 
-outFile :: Parser FilePath
-outFile = option str
-  ( long "nix-out-file"
-    <> metavar "NIX_OUT_FILE"
-    <> help "path to output derivation"
-    <> value "default.nix"
-    <> showDefaultWith id )
-
 nixpkgsRepository :: Parser FilePath
 nixpkgsRepository = option str
   ( long "nixpkgs"
@@ -66,51 +71,48 @@ nixpkgsRepository = option str
     <> value "<nixpkgs>"
     <> showDefaultWith id )
 
-stackageBuildPlan :: Parser FilePath
-stackageBuildPlan = option str
-  ( long "stackage-build-plan"
-    <> metavar "STACKAGE_BUILD_PLAN"
-    <> help "stackage build plan (YAML)" )
-
-allCabalHashesPath :: Parser FilePath
-allCabalHashesPath = option str
+allCabalHashesRepo :: Parser FilePath
+allCabalHashesRepo = option str
   ( long "all-cabal-hashes"
-    <> metavar "ALL_CABAL_HASHES"
+    <> metavar "REPO_DIR"
     <> help "path to commercialhaskell/all-cabal-hashes repository" )
 
-ltsHaskellPath :: Parser FilePath
-ltsHaskellPath = option str
+ltsHaskellRepo :: Parser FilePath
+ltsHaskellRepo = option str
   ( long "lts-haskell"
-    <> metavar "LTS_HASKELL_DIR"
+    <> metavar "REPO_DIR"
     <> help "path to fpco/lts-haskell repository" )
 
-stackResolver :: Parser StackResolver
-stackResolver = StackResolver <$>
-  option text
-    ( long "resolver"
-      <> metavar "RESOLVER"
-      <> help "override stack resolver" )
-
-stackageOutPackages :: Parser FilePath
-stackageOutPackages = option str
-  ( long "nix-stackage-packages"
-    <> metavar "STACKAGE_PACKAGES"
-    <> help "name of the output file for the package set"
+outStackagePackages :: Parser FilePath
+outStackagePackages = option str
+  ( long "out-packages"
+    <> metavar "NIX_FILE"
+    <> help "output file of the stackage packages set"
     <> value "packages.nix"
     <> showDefaultWith id)
 
-stackageOutConfig :: Parser FilePath
-stackageOutConfig = option str
-  ( long "nix-stackage-config"
-    <> metavar "STACKAGE_CONFIG"
-    <> help "name of the output file for the package set configuration"
+outStackageConfig :: Parser FilePath
+outStackageConfig = option str
+  ( long "out-config"
+    <> metavar "NIX_FILE"
+    <> help "output file of the stackage packages compiler config"
     <> value "configuration-packages.nix"
     <> showDefaultWith id)
+
+outDerivation :: Parser FilePath
+outDerivation = option str
+  ( long "out-derivation"
+    <> metavar "NIX_FILE"
+    <> help "path to output derivation"
+    <> value "default.nix"
+    <> showDefaultWith id )
 
 stackYamlArg :: Parser FilePath
 stackYamlArg = Opts.argument str
   ( metavar "STACK_YAML"
-    <> value "stack.yaml" )
+    <> help "path to stack.yaml file or directory" )
+
+-- inherited from cabal2nix
 
 hackageDb :: Parser HackageDb
 hackageDb = HackageDb <$>
@@ -139,6 +141,8 @@ platform = option (readP Text.parse)
     <> help "target system to use when evaluating the Cabal file"
     <> value buildPlatform
     <> showDefaultWith Text.display )
+
+-- utils
 
 text :: ReadM Text
 text = T.pack <$> str

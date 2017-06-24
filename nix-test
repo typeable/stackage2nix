@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 LTS_HASKELL_DIR=${LTS_HASKELL_DIR:-~/lts-haskell}
 ALL_CABAL_HASHES_DIR=${ALL_CABAL_HASHES_DIR:-~/all-cabal-hashes}
 
@@ -14,7 +16,8 @@ fi
 set -x
 stack exec -- stack2nix \
   --lts-haskell "$LTS_HASKELL_DIR" \
-  --all-cabal-hashes "$ALL_CABAL_HASHES_DIR"
+  --all-cabal-hashes "$ALL_CABAL_HASHES_DIR" \
+  .
 set +x
 
 nix-build -A stack2nix "$@"
