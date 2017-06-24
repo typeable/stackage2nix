@@ -9,8 +9,11 @@ import Data.Coerce
 import Data.Maybe
 import Data.Text as T
 import Data.Yaml
-import Stack.Config.Yaml as Yaml
 import Network.URI
+import Stack.Config.Yaml as Yaml
+import Stack.Types
+import System.FilePath
+
 
 newtype StackResolver = StackResolver { fromStackResolver :: Text }
   deriving (Eq, Ord, Show)
@@ -78,6 +81,12 @@ fromYamlGit yg = RepoGit{..}
     _rgUri = yg ^. gGit
     _rgCommit = yg ^. gCommit
 
-readStackConfig :: FilePath -> IO (Either String StackConfig)
-readStackConfig stackYaml =
-  second fromYamlConfig . decodeEither <$> BS.readFile stackYaml
+readStackConfig :: StackYaml -> IO (Either String StackConfig)
+readStackConfig stackYaml = do
+  let
+    relativeToStackYaml = \case
+      StackFilePath p -> StackFilePath $ stackYaml ^. syDirName </> p
+      packageLocation -> packageLocation
+    mkStackConfig = over (scPackages . traversed . spLocation) relativeToStackYaml
+      . fromYamlConfig
+  second mkStackConfig . decodeEither <$> BS.readFile (stackYaml ^. syFilePath)

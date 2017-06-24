@@ -29,17 +29,18 @@ data Options = Options
 
 makeLenses ''Options
 
-envStackYaml :: IO (Maybe FilePath)
-envStackYaml = lookupEnv "STACK_YAML"
+envStackYaml :: IO (Maybe StackYaml)
+envStackYaml = fmap mkStackYaml <$> lookupEnv "STACK_YAML"
 
-optStackYaml :: Getter Options FilePath
-optStackYaml = optStackYamlArg . to stackYamlFile
-  where
-    stackYamlFile p = case splitFileName p of
-      (dir, "")   -> dir </> "stack.yaml"
-      (dir, ".")  -> dir </> "stack.yaml"
-      (_  , "..") -> p </> "stack.yaml"
-      _           -> p
+optStackYaml :: Getter Options StackYaml
+optStackYaml = optStackYamlArg . to mkStackYaml
+
+mkStackYaml :: FilePath -> StackYaml
+mkStackYaml p = case splitFileName p of
+  (dir, "")   -> StackYaml dir "stack.yaml"
+  (dir, ".")  -> StackYaml dir "stack.yaml"
+  (_  , "..") -> StackYaml p "stack.yaml"
+  _           -> StackYaml "." p
 
 options :: Parser Options
 options = Options

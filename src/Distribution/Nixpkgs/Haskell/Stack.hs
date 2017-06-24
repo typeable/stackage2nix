@@ -6,6 +6,7 @@ import Distribution.Compiler as Compiler
 import Distribution.Nixpkgs.Fetch
 import Distribution.Nixpkgs.Haskell.Derivation
 import Distribution.Nixpkgs.Haskell.FromCabal as FromCabal
+import Distribution.Nixpkgs.Haskell.FromStack.Package as FromStack
 import Distribution.Nixpkgs.Haskell.PackageSourceSpec as PackageSourceSpec
 import Distribution.PackageDescription as PackageDescription
 import Distribution.System as System
@@ -79,8 +80,11 @@ packageDerivation
   -> IO Derivation
 packageDerivation conf optHackageDb stackPackage = do
   pkg <- getStackPackageFromDb optHackageDb stackPackage
-  pure $ genericPackageDerivation conf pkg
+  pure . overrideStackageDerivation
+    $ genericPackageDerivation conf pkg
     & src .~ pkgSource pkg
+    & doCheck .~ False
+    & runHaddock .~ False
 
 genericPackageDerivation
   :: PackageConfig
@@ -95,3 +99,13 @@ genericPackageDerivation conf pkg =
     (conf ^. pcFlagAssignment)
     []
     (pkgCabal pkg)
+
+-- Stackage packages set only consistent for packages with their library and
+-- executable dependencies and completely ignores test dependencies.
+overrideStackageDerivation :: Derivation -> Derivation
+overrideStackageDerivation node = node
+   & doCheck .~ False
+   & runHaddock .~ False
+
+overrideStackageNode :: Node -> Node
+overrideStackageNode = over nodeDerivation overrideStackageDerivation
