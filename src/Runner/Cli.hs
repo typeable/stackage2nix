@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Runner.Cli where
 
 import           Control.Lens

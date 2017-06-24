@@ -42,6 +42,10 @@ library
                      , stackage-curator
                      , text
                      , yaml
+  default-extensions:  LambdaCase
+                     , OverloadedStrings
+                     , RecordWildCards
+                     , TemplateHaskell
   default-language:    Haskell2010
   ghc-options:         -Wall -funbox-strict-fields
 
@@ -59,7 +63,7 @@ test-suite spec
   main-is:             Spec.hs
   build-depends:       base
                      , Cabal
-                     , bytestring > 0.10 && < 0.11
+                     , bytestring
                      , hspec
                      , pretty
                      , shakespeare

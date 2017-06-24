@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting where
 

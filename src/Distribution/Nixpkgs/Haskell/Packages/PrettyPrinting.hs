@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting where
 
 import Language.Nix.PrettyPrinting
