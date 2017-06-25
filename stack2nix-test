@@ -18,6 +18,5 @@ stack exec -- stack2nix \
   --lts-haskell "$LTS_HASKELL_DIR" \
   --all-cabal-hashes "$ALL_CABAL_HASHES_DIR" \
   .
-set +x
 
 nix-build -A stack2nix "$@"
