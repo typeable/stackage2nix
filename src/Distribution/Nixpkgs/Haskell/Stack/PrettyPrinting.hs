@@ -3,6 +3,9 @@
 module Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting where
 
 import           Control.Lens
+import           Data.Foldable as F
+import           Data.List as L
+import           Data.List.NonEmpty as NE
 import           Data.Maybe
 import           Data.String
 import           Distribution.Nixpkgs.Haskell.Derivation
@@ -24,8 +27,8 @@ makeLenses ''OverrideConfig
 hasField :: Lens' a (Maybe b) -> a -> Bool
 hasField p = views p isJust
 
-overridePackages :: [Derivation] -> Doc
-overridePackages = PP.packageSetConfig . PP.cat . fmap callPackage
+overridePackages :: (Foldable t, Functor t) => t Derivation -> Doc
+overridePackages = PP.packageSetConfig . PP.cat . F.toList . fmap callPackage
   where
     drvNameQuoted   = PP.doubleQuotes . disp . pkgName . view pkgid
     callPackage drv = hang
@@ -51,7 +54,7 @@ callStackageConfig :: FilePath -> Doc
 callStackageConfig path = hsep
   [ "callPackage", disp (fromString path :: Nix.FilePath), "{}"]
 
-overrideHaskellPackages :: OverrideConfig -> [Derivation] -> Doc
+overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
 overrideHaskellPackages oc packages = vcat
   [ funargs ["nixpkgs ? import <nixpkgs> {}"]
   , ""
@@ -81,4 +84,4 @@ overrideHaskellPackages oc packages = vcat
 
 toNixGhcVersion :: Version -> Doc
 toNixGhcVersion =
-  (<>) "ghc" . text . filter (/= '.') . show . disp
+  (<>) "ghc" . text . L.filter (/= '.') . show . disp

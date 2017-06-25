@@ -6,6 +6,8 @@ import Control.Lens
 import Data.Bifunctor
 import Data.ByteString as BS
 import Data.Coerce
+import Data.Foldable as F
+import Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Text as T
 import Data.Yaml
@@ -48,7 +50,7 @@ makeLenses ''StackPackage
 
 data StackConfig = StackConfig
   { _scResolver  :: !StackResolver
-  , _scPackages  :: ![StackPackage]
+  , _scPackages  :: !(NonEmpty StackPackage)
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackConfig
@@ -56,10 +58,12 @@ makeLenses ''StackConfig
 fromYamlConfig :: Yaml.Config -> StackConfig
 fromYamlConfig c = StackConfig{..}
   where
-    _scResolver = coerce $ c ^. cResolver
-    _scPackages =
-      (fromYamlPackage <$> c ^. cPackages . to (fromMaybe mempty)) ++
-      (fromYamlExtraDep <$> c ^. cExtraDeps . to (fromMaybe mempty))
+    _scResolver    = coerce $ c ^. cResolver
+    _scPackages    = F.foldr (NE.<|) neYamlPackages yamlExtraDeps
+    neYamlPackages = fromMaybe (pure defaultPackage) $ NE.nonEmpty yamlPackages
+    yamlPackages   = fromYamlPackage <$> fromMaybe mempty (c ^. cPackages)
+    yamlExtraDeps  = fromYamlExtraDep <$> fromMaybe mempty (c ^. cExtraDeps)
+    defaultPackage = StackPackage (StackFilePath ".") False
 
 fromYamlPackage :: Yaml.Package -> StackPackage
 fromYamlPackage = \case
