@@ -20,6 +20,10 @@ data Options = Options
   , _optOutStackagePackages :: !FilePath
   , _optOutStackageConfig   :: !FilePath
   , _optOutDerivation       :: !FilePath
+  , _optDoCheckPackages     :: !Bool
+  , _optDoHaddockPackages   :: !Bool
+  , _optDoCheckStackage     :: !Bool
+  , _optDoHaddockStackage   :: !Bool
   , _optHackageDb           :: !(Maybe HackageDb)
   , _optNixpkgsRepository   :: !FilePath
   , _optCompilerId          :: !CompilerId
@@ -49,6 +53,10 @@ options = Options
   <*> outStackagePackages
   <*> outStackageConfig
   <*> outDerivation
+  <*> doCheckPackages
+  <*> doHaddockPackages
+  <*> doCheckStackage
+  <*> doHaddockStackage
   <*> optional hackageDb
   <*> nixpkgsRepository
   <*> compilerId
@@ -105,6 +113,26 @@ outDerivation = option str
     <> help "path to output derivation"
     <> value "default.nix"
     <> showDefaultWith id )
+
+doCheckPackages :: Parser Bool
+doCheckPackages = flag True False
+  ( long "no-check"
+    <> help "disable tests for project packages")
+
+doHaddockPackages :: Parser Bool
+doHaddockPackages = flag True False
+  ( long "no-haddock"
+    <> help "disable haddock for project packages")
+
+doCheckStackage :: Parser Bool
+doCheckStackage = switch
+  ( long "do-check-stackage"
+    <> help "enable tests for Stackage packages" )
+
+doHaddockStackage :: Parser Bool
+doHaddockStackage = switch
+  ( long "do-haddock-stackage"
+    <> help "enable haddock for Stackage packages" )
 
 stackYamlArg :: Parser FilePath
 stackYamlArg = Opts.argument str
