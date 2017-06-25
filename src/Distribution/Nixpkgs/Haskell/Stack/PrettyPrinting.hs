@@ -77,8 +77,8 @@ overrideHaskellPackages oc packages = vcat
   , "in callPackage <nixpkgs/pkgs/development/haskell-modules> {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
-    , attr "compilerConfig" "self: extends stackageConfig (stackagePackages self)"
-    , attr "overrides" "self: pkgOverrides self"]
+    , attr "compilerConfig" "self: extends pkgOverrides (extends stackageConfig (stackagePackages self))"
+    ]
   , "}"
   ]
 
