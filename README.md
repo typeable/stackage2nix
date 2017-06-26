@@ -31,7 +31,8 @@ nix-build -A <package-name>
 ## Override result derivation
 
 Complex projects may require some extra customization.
-Snippet `override.nix` below is a minimal example of Haskell packages override.
+Snippet `override.nix` below shows a minimal example of how to apply additional
+overrides on top of Haskell packages set produced by `stack2nix`.
 
 ```
 with import <nixpkgs> {};
