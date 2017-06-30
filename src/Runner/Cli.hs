@@ -44,7 +44,7 @@ mkStackYaml p = case splitFileName p of
   (dir, "")   -> StackYaml dir "stack.yaml"
   (dir, ".")  -> StackYaml dir "stack.yaml"
   (_  , "..") -> StackYaml p "stack.yaml"
-  _           -> StackYaml "." p
+  (dir, file) -> StackYaml dir file
 
 options :: Parser Options
 options = Options
