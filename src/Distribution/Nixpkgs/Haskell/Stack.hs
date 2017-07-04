@@ -61,9 +61,9 @@ stackLocationToSource = \case
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = mempty }
-  StackRepoGit rg  -> Source
-    { sourceUrl      = T.unpack $ rg ^. rgUri
-    , sourceRevision = T.unpack $ rg ^. rgCommit
+  StackRepo r      -> Source
+    { sourceUrl      = T.unpack $ r ^. rUri
+    , sourceRevision = T.unpack $ r ^. rCommit
     , sourceHash     = UnknownHash
     , sourceCabalDir = mempty }
 

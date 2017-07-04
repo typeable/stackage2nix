@@ -25,10 +25,20 @@ makeLenses ''Git
 
 deriveJSON jsonOpts ''Git
 
+data Hg = Hg
+  { _hHg     :: !Text
+  , _hCommit :: !Text
+  } deriving (Eq, Show)
+
+makeLenses ''Hg
+
+deriveJSON jsonOpts ''Hg
+
 data Package
   = Simple Text
   | LocationSimple (Location Text)
   | LocationGit (Location Git)
+  | LocationHg (Location Hg)
   deriving (Eq, Show)
 
 makePrisms ''Package
@@ -37,13 +47,15 @@ instance FromJSON Package where
   parseJSON v =
     (Simple <$> parseJSON v) <|>
     (LocationSimple <$> parseJSON v) <|>
-    (LocationGit <$> parseJSON v)
+    (LocationGit <$> parseJSON v) <|>
+    (LocationHg <$> parseJSON v)
 
 instance ToJSON Package where
   toJSON = \case
     Simple t         -> toJSON t
     LocationSimple t -> toJSON t
     LocationGit t    -> toJSON t
+    LocationHg t     -> toJSON t
 
 data Config = Config
   { _cResolver  :: !Text

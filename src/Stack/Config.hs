@@ -25,18 +25,22 @@ makePrisms ''StackResolver
 unStackResolver :: StackResolver -> String
 unStackResolver = T.unpack . fromStackResolver
 
-data RepoGit = RepoGit
-  { _rgUri    :: !Text
-  , _rgCommit :: !Text
+newtype Vcs = Vcs { fromVcs :: Text }
+  deriving (Eq, Ord, Show)
+
+data Repo = Repo
+  { _rVcs    :: !Vcs
+  , _rUri    :: !Text
+  , _rCommit :: !Text
   } deriving (Eq, Ord, Show)
 
-makeLenses ''RepoGit
+makeLenses ''Repo
 
 data PackageLocation
   = HackagePackage Text
   | StackFilePath FilePath
   | StackUri URI
-  | StackRepoGit RepoGit
+  | StackRepo Repo
   deriving (Eq, Ord, Show)
 
 makePrisms ''PackageLocation
@@ -72,18 +76,28 @@ fromYamlPackage = \case
   Yaml.LocationSimple (Yaml.Location p extraDep) ->
     StackPackage (parseSimplePath p) (fromMaybe False extraDep)
   Yaml.LocationGit (Location git extraDep)       ->
-    StackPackage (StackRepoGit $ fromYamlGit git) (fromMaybe False extraDep)
+    StackPackage (StackRepo $ fromYamlGit git) (fromMaybe False extraDep)
+  Yaml.LocationHg (Location hg extraDep)       ->
+    StackPackage (StackRepo $ fromYamlHg hg) (fromMaybe False extraDep)
   where
     parseSimplePath (T.unpack -> p) = maybe (StackFilePath p) StackUri $ parseURI p
 
 fromYamlExtraDep :: Text -> StackPackage
 fromYamlExtraDep = flip StackPackage True . HackagePackage
 
-fromYamlGit :: Yaml.Git -> RepoGit
-fromYamlGit yg = RepoGit{..}
+fromYamlGit :: Yaml.Git -> Repo
+fromYamlGit yg = Repo{..}
   where
-    _rgUri = yg ^. gGit
-    _rgCommit = yg ^. gCommit
+    _rVcs = Vcs "git"
+    _rUri = yg ^. gGit
+    _rCommit = yg ^. gCommit
+
+fromYamlHg :: Yaml.Hg -> Repo
+fromYamlHg yh = Repo{..}
+  where
+    _rVcs = Vcs "hg"
+    _rUri = yh ^. hHg
+    _rCommit = yh ^. hCommit
 
 readStackConfig :: StackYaml -> IO (Either String StackConfig)
 readStackConfig stackYaml = do
