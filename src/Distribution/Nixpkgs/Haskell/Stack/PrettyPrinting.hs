@@ -12,7 +12,7 @@ import           Distribution.Nixpkgs.Haskell.Derivation
 import           Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting as PP
 import           Distribution.Package
 import           Distribution.Text
-import           Distribution.Version (Version(..))
+import           Distribution.Version (Version)
 import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
 
