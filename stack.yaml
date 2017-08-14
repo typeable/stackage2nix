@@ -2,8 +2,8 @@ resolver: lts-9.0
 packages:
 - '.'
 - location:
-    git: https://github.com/4e6/cabal2nix.git
-    commit: 7993728ea70101036a3558acea58cc49a67ac569
+    git: https://github.com/NixOS/cabal2nix.git
+    commit: 53777ef45c45f397c1f56f9230ae494d2aefee86
   extra-dep: true
 - location:
     git: https://github.com/fpco/stackage-curator.git
