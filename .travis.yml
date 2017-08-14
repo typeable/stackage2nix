@@ -17,4 +17,4 @@ before_install:
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 script:
-- stack -j2 --no-terminal --install-ghc test
+- stack -j2 --no-terminal --install-ghc test --fast --pedantic
