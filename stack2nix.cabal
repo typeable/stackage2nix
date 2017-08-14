@@ -1,5 +1,5 @@
 name:                stack2nix
-version:             0.1.0.0
+version:             0.2.0
 synopsis:            Convert Stack files into Nix build instructions.
 homepage:            https://github.com/4e6/stack2nix#readme
 license:             BSD3
@@ -13,7 +13,10 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting
+  exposed-modules:     AllCabalHashes
+                     , Distribution.Nixpkgs.Haskell.FromStack
+                     , Distribution.Nixpkgs.Haskell.FromStack.Package
+                     , Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting
                      , Distribution.Nixpkgs.Haskell.Stack
                      , Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting
                      , Language.Nix.FilePath
@@ -23,6 +26,8 @@ library
                      , Stack.Config.TH
                      , Stack.Config.Yaml
                      , Stack.Types
+                     , Stackage2nix
+  other-modules:       Paths_stack2nix
   build-depends:       base > 4.7 && < 5
                      , Cabal > 1.24
                      , QuickCheck
@@ -33,6 +38,9 @@ library
                      , deepseq
                      , distribution-nixpkgs >= 1.1
                      , filepath
+                     , gitlib > 3
+                     , gitlib-libgit2 > 3
+                     , hopenssl > 2.2
                      , inflections
                      , language-nix
                      , lens
@@ -41,6 +49,7 @@ library
                      , pretty
                      , stackage-curator
                      , text
+                     , unordered-containers
                      , yaml
   default-extensions:  LambdaCase
                      , OverloadedStrings
@@ -49,8 +58,16 @@ library
   default-language:    Haskell2010
   ghc-options:         -Wall -funbox-strict-fields
 
+executable stackage2nix
+  hs-source-dirs:      stackage2nix
+  main-is:             Main.hs
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , stack2nix
+  default-language:    Haskell2010
+
 executable stack2nix
-  hs-source-dirs:      app
+  hs-source-dirs:      stack2nix
   main-is:             Main.hs
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
