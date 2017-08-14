@@ -8,3 +8,6 @@ packages:
 extra-deps:
 - distribution-nixpkgs-1.1
 - hopenssl-2.2
+nix:
+  packages: [icu openssl zlib]
+
