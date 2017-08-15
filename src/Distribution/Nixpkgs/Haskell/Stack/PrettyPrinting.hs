@@ -20,7 +20,9 @@ import           Language.Nix.PrettyPrinting as PP
 data OverrideConfig = OverrideConfig
   { _ocGhc              :: !Version
   , _ocStackagePackages :: !FilePath
-  , _ocStackageConfig   :: !FilePath }
+  , _ocStackageConfig   :: !FilePath
+  , _ocNixpkgs          :: !FilePath
+  }
 
 makeLenses ''OverrideConfig
 
@@ -49,10 +51,15 @@ callStackageConfig path = hsep
 
 overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
 overrideHaskellPackages oc packages = vcat
-  [ funargs ["nixpkgs ? import <nixpkgs> {}"]
+  [ funargs ["nixpkgs ? import "
+            <> disp (fromString (oc ^. ocNixpkgs) :: Nix.FilePath)
+            <> " {}"
+            ]
   , ""
   , "with nixpkgs;"
-  , "let nixpkgsPath = <nixpkgs>;"
+  , nest 2 $ "let nixpkgsPath = "
+          <> disp (fromString (oc ^. ocNixpkgs) :: Nix.FilePath)
+          <> ";"
   , nest 2 "inherit (stdenv.lib) extends;"
   , nest 2 ""
   , nest 2 $ vcat
