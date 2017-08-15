@@ -20,7 +20,9 @@ import           Language.Nix.PrettyPrinting as PP
 data OverrideConfig = OverrideConfig
   { _ocGhc              :: !Version
   , _ocStackagePackages :: !FilePath
-  , _ocStackageConfig   :: !FilePath }
+  , _ocStackageConfig   :: !FilePath
+  , _ocNixpkgs          :: !FilePath
+  }
 
 makeLenses ''OverrideConfig
 
@@ -43,20 +45,16 @@ importStackagePackages path = hsep
   , "}"
   ]
 
-importStackageConfig :: FilePath -> Doc
-importStackageConfig path = hsep
-  [ "import", disp (fromString path :: Nix.FilePath), "{"
-  , "inherit pkgs;"
-  , "}"
-  ]
-
 callStackageConfig :: FilePath -> Doc
 callStackageConfig path = hsep
   [ "callPackage", disp (fromString path :: Nix.FilePath), "{}"]
 
 overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
 overrideHaskellPackages oc packages = vcat
-  [ funargs ["nixpkgs ? import <nixpkgs> {}"]
+  [ funargs ["nixpkgs ? import "
+            <> disp (fromString (oc ^. ocNixpkgs) :: Nix.FilePath)
+            <> " {}"
+            ]
   , ""
   , "with nixpkgs;"
   , "let"
@@ -74,10 +72,11 @@ overrideHaskellPackages oc packages = vcat
     , "};"
     , ""
     ]
-  , "in callPackage <nixpkgs/pkgs/development/haskell-modules> {"
+  , "in callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules\") {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
     , attr "compilerConfig" "self: extends pkgOverrides (extends stackageConfig (stackagePackages self))"
+    , attr "haskellLib" "callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules/lib.nix\") {}"
     ]
   , "}"
   ]

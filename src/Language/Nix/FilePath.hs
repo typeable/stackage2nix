@@ -43,4 +43,7 @@ parseFilePath = do
     else pfail
 
 renderFilePath :: FilePath -> String
-renderFilePath = Posix.combine "." . Posix.normalise . unFilePath
+renderFilePath = Posix.combine "."
+               . Posix.normalise
+               . Posix.dropTrailingPathSeparator
+               . unFilePath

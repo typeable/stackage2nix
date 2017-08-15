@@ -78,7 +78,9 @@ mkOverrideConfig :: Options -> Version -> OverrideConfig
 mkOverrideConfig opts ghcVersion = OverrideConfig
   { _ocGhc              = ghcVersion
   , _ocStackagePackages = opts ^. optOutStackagePackages
-  , _ocStackageConfig   = opts ^. optOutStackageConfig }
+  , _ocStackageConfig   = opts ^. optOutStackageConfig
+  , _ocNixpkgs          = opts ^. optNixpkgsRepository
+  }
 
 mkS2nOptions :: StackConfig -> Options -> S2n.Options
 mkS2nOptions conf opts = S2n.Options
