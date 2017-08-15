@@ -57,11 +57,8 @@ overrideHaskellPackages oc packages = vcat
             ]
   , ""
   , "with nixpkgs;"
-  , nest 2 $ "let nixpkgsPath = "
-          <> disp (fromString (oc ^. ocNixpkgs) :: Nix.FilePath)
-          <> ";"
+  , "let"
   , nest 2 "inherit (stdenv.lib) extends;"
-  , nest 2 ""
   , nest 2 $ vcat
     [ attr "stackagePackages" . importStackagePackages $ oc ^. ocStackagePackages
     , attr "stackageConfig" . callStackageConfig $ oc ^. ocStackageConfig ]
@@ -75,11 +72,11 @@ overrideHaskellPackages oc packages = vcat
     , "};"
     , ""
     ]
-  , "in callPackage (nixpkgsPath + \"/pkgs/development/haskell-modules\") {"
+  , "in callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules\") {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
     , attr "compilerConfig" "self: extends pkgOverrides (extends stackageConfig (stackagePackages self))"
-    , attr "haskellLib" "callPackage (nixpkgsPath + \"/pkgs/development/haskell-modules/lib.nix\") {}"
+    , attr "haskellLib" "callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules/lib.nix\") {}"
     ]
   , "}"
   ]
