@@ -43,13 +43,6 @@ importStackagePackages path = hsep
   , "}"
   ]
 
-importStackageConfig :: FilePath -> Doc
-importStackageConfig path = hsep
-  [ "import", disp (fromString path :: Nix.FilePath), "{"
-  , "inherit pkgs;"
-  , "}"
-  ]
-
 callStackageConfig :: FilePath -> Doc
 callStackageConfig path = hsep
   [ "callPackage", disp (fromString path :: Nix.FilePath), "{}"]
