@@ -13,8 +13,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     AllCabalHashes
-                     , Distribution.Nixpkgs.Haskell.FromStack
+  exposed-modules:     Distribution.Nixpkgs.Haskell.FromStack
                      , Distribution.Nixpkgs.Haskell.FromStack.Package
                      , Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting
                      , Distribution.Nixpkgs.Haskell.Stack
@@ -26,8 +25,9 @@ library
                      , Stack.Config.TH
                      , Stack.Config.Yaml
                      , Stack.Types
-                     , Stackage2nix
-  other-modules:       Paths_stack2nix
+  other-modules:       AllCabalHashes
+                     , LtsHaskell
+                     , Paths_stack2nix
   build-depends:       base > 4.7 && < 5
                      , Cabal > 1.24
                      , QuickCheck
@@ -57,14 +57,6 @@ library
                      , TemplateHaskell
   default-language:    Haskell2010
   ghc-options:         -Wall -funbox-strict-fields
-
-executable stackage2nix
-  hs-source-dirs:      stackage2nix
-  main-is:             Main.hs
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
-                     , stack2nix
-  default-language:    Haskell2010
 
 executable stack2nix
   hs-source-dirs:      stack2nix
