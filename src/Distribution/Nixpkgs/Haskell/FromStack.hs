@@ -23,10 +23,11 @@ data PackageSetConfig = PackageSetConfig
   , nixpkgsResolver :: NixpkgsResolver
   , packageLoader   :: Maybe SHA1Hash -> PackageIdentifier -> IO Package
   , targetPlatform  :: Platform
-  , targetCompiler  :: CompilerInfo
-  , enableCheck     :: Bool
-  , enableHaddock   :: Bool
-  }
+  , targetCompiler  :: CompilerInfo }
+
+data PackageConfig = PackageConfig
+  { enableCheck   :: Bool
+  , enableHaddock :: Bool }
 
 removeTests :: GenericPackageDescription -> GenericPackageDescription
 removeTests gd = gd { condTestSuites = [] }
@@ -36,23 +37,23 @@ planDependencies = map makeDependency . Map.toList . sdPackages . ppDesc
  where
   makeDependency (name, depInfo) = Dependency name (diRange depInfo)
 
-buildNodeM :: PackageSetConfig -> PackageName -> PackagePlan -> IO Node
-buildNodeM conf name plan = do
+buildNodeM :: PackageSetConfig -> PackageConfig -> PackageName -> PackagePlan -> IO Node
+buildNodeM conf pconf name plan = do
   let
     cabalHashes = maybe mempty cfiHashes $ ppCabalFileInfo plan
     mGitSha1 = Map.lookup "GitSHA1" cabalHashes
   pkg <- packageLoader conf mGitSha1 $ PackageIdentifier name (ppVersion plan)
-  pure . mkNode $ fromPackage conf plan pkg
+  pure . mkNode $ fromPackage conf pconf plan pkg
 
-fromPackage :: PackageSetConfig -> PackagePlan -> Package -> Derivation
-fromPackage conf plan pkg =
+fromPackage :: PackageSetConfig -> PackageConfig -> PackagePlan -> Package -> Derivation
+fromPackage conf pconf plan pkg =
   let
     constraints = ppConstraints plan
     testsEnabled =
-      enableCheck conf &&
+      enableCheck pconf &&
       pcTests constraints == ExpectSuccess
     haddocksEnabled =
-      enableHaddock conf &&
+      enableHaddock pconf &&
       pcHaddocks constraints == ExpectSuccess &&
       not (Set.null (sdModules (ppDesc plan)))
     configureTests
