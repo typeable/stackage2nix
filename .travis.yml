@@ -9,6 +9,7 @@ addons:
 
 cache:
   directories:
+  - $HOME/.local/bin
   - $HOME/.stack
   - $HOME/.nix
 
@@ -16,8 +17,9 @@ jobs:
   include:
     - stage: test
       script:
-      - stack -j2 --no-terminal --install-ghc build --fast --only-dependencies
-      - stack -j2 --no-terminal --install-ghc test --fast --pedantic
+      - stack --no-terminal --install-ghc build --fast --only-dependencies
+      - stack --no-terminal --install-ghc test --fast --pedantic
+      - stack --no-terminal install
     - stage: bootstrap
       script:
       - nix-env -i nix-prefetch-git
