@@ -26,6 +26,9 @@ data OverrideConfig = OverrideConfig
 
 makeLenses ''OverrideConfig
 
+systemNixpkgs :: Doc
+systemNixpkgs = "<nixpkgs>"
+
 hasField :: Lens' a (Maybe b) -> a -> Bool
 hasField p = views p isJust
 
@@ -50,11 +53,16 @@ callStackageConfig path = hsep
   [ "callPackage", disp (fromString path :: Nix.FilePath), "{}"]
 
 overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
-overrideHaskellPackages oc packages = vcat
-  [ funargs ["nixpkgs ? import "
-            <> disp (fromString (oc ^. ocNixpkgs) :: Nix.FilePath)
-            <> " {}"
-            ]
+overrideHaskellPackages oc packages =
+  let nixpkgs = fromString $ oc ^. ocNixpkgs
+  in vcat
+  [ funargs
+    [ "nixpkgs ? import "
+      <> if nixpkgs == systemNixpkgs
+         then nixpkgs
+         else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
+      <> " {}"
+    ]
   , ""
   , "with nixpkgs;"
   , "let"
