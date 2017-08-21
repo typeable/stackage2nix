@@ -74,7 +74,11 @@ packageDerivation
   -> IO Derivation
 packageDerivation conf optHackageDb stackPackage = do
   pkg <- getStackPackageFromDb optHackageDb stackPackage
-  let drv = genericPackageDerivation conf pkg & src .~ pkgSource pkg
+  let
+    drv = genericPackageDerivation conf pkg
+      & src .~ pkgSource pkg
+      -- TODO: remove after Nixos/Nixpkgs #27196 released
+      & enableSeparateDataOutput .~ False
   return $ if stackPackage ^. spExtraDep
     then drv
       & doCheck &&~ conf ^. spcDoCheckStackage
