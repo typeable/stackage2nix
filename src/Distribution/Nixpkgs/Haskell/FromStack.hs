@@ -89,3 +89,5 @@ fromPackage conf pconf plan pkg =
       & doCheck .~ testsEnabled
       & runHaddock .~ haddocksEnabled
       & metaSection . Nix.broken .~ brokenEnabled
+      -- TODO: remove after Nixos/Nixpkgs #27196 released
+      & enableSeparateDataOutput .~ False
