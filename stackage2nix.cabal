@@ -38,6 +38,7 @@ library
                      , containers
                      , deepseq
                      , distribution-nixpkgs >= 1.1
+                     , exceptions > 0.8
                      , filepath
                      , gitlib > 3
                      , gitlib-libgit2 > 3
