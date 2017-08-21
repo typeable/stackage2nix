@@ -2,8 +2,9 @@
 
 set -e
 
-LTS_HASKELL_DIR=${LTS_HASKELL_DIR:-~/lts-haskell}
-ALL_CABAL_HASHES_DIR=${ALL_CABAL_HASHES_DIR:-~/all-cabal-hashes}
+STACKAGE2NIX_WORK_DIR=${STACKAGE2NIX_WORK_DIR:-$HOME}
+LTS_HASKELL_DIR=${LTS_HASKELL_DIR:-$STACKAGE2NIX_WORK_DIR/lts-haskell}
+ALL_CABAL_HASHES_DIR=${ALL_CABAL_HASHES_DIR:-$STACKAGE2NIX_WORK_DIR/all-cabal-hashes}
 
 if [ ! -d "$LTS_HASKELL_DIR" ]; then
   git clone --depth 1 https://github.com/fpco/lts-haskell.git "$LTS_HASKELL_DIR"
@@ -14,9 +15,9 @@ if [ ! -d "$ALL_CABAL_HASHES_DIR" ]; then
 fi
 
 set -x
-stack exec -- stack2nix \
+stack exec -- stackage2nix \
   --lts-haskell "$LTS_HASKELL_DIR" \
   --all-cabal-hashes "$ALL_CABAL_HASHES_DIR" \
   .
 
-nix-build -A stack2nix "$@"
+nix-build -A stackage2nix "$@"

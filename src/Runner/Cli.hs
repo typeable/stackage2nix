@@ -9,7 +9,7 @@ import           Distribution.Nixpkgs.Haskell.Stack
 import           Distribution.System as System
 import qualified Distribution.Text as Text
 import           Options.Applicative as Opts
-import           Paths_stack2nix ( version )
+import           Paths_stackage2nix ( version )
 import           Stack.Types
 import           System.Environment
 import           System.FilePath
@@ -70,7 +70,7 @@ pinfo = info
     <*> infoOption ("stackage2nix " ++ Text.display version) (long "version" <> help "Show version")
     <*> options )
   ( fullDesc
-  <> header "stack2nix converts Stack files into build instructions for Nix." )
+  <> header "stackage2nix converts Stack files into build instructions for Nix." )
 
 nixpkgsRepository :: Parser FilePath
 nixpkgsRepository = option str

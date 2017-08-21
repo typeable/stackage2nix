@@ -13,7 +13,7 @@ import Distribution.Package (mkPackageName, pkgName)
 import Distribution.Text as Text (display)
 import Language.Nix as Nix
 import Options.Applicative
-import Paths_stack2nix ( version )
+import Paths_stackage2nix ( version )
 import Runner.Cli
 import Stack.Config
 import Stack.Types
