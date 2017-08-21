@@ -1,18 +1,18 @@
-# stack2nix
+# stackage2nix
 
-[![Build Status](https://travis-ci.org/4e6/stack2nix.svg?branch=master)](https://travis-ci.org/4e6/stack2nix)
+[![Build Status](https://travis-ci.org/4e6/stackage2nix.svg?branch=master)](https://travis-ci.org/4e6/stackage2nix)
 
-`stack2nix` converts a Stack file into a Nix Haskell packages set.
+`stackage2nix` converts a Stack file into a Nix Haskell packages set.
 It creates LTS Stackage packages set, and applies appropriate overrides on top of it.
 
 ```
-stack2nix \
+stackage2nix \
   --lts-haskell "$LTS_HASKELL_REPO" \
   --all-cabal-hashes "$ALL_CABAL_HASHES_REPO" \
   .
 ```
 
-`stack2nix` has three required arguments:
+`stackage2nix` has three required arguments:
 - `--lts-haskell` - path to [fpco/lts-haskell](https://github.com/fpco/lts-haskell)
 - `--all-cabal-hashes` - path to [commercialhaskell/all-cabal-hashes](https://github.com/commercialhaskell/all-cabal-hashes) checked out to `hackage` branch
 - `.` - path to stack.yaml file or directory
@@ -32,7 +32,7 @@ nix-build -A <package-name>
 
 Complex projects may require some extra customization.
 Snippet `override.nix` below shows a minimal example of how to apply additional
-overrides on top of Haskell packages set produced by `stack2nix`.
+overrides on top of Haskell packages set produced by `stackage2nix`.
 
 ```
 with import <nixpkgs> {};
@@ -40,13 +40,13 @@ with pkgs.haskell.lib;
 let haskellPackages = import ./. {};
 in haskellPackages.override {
   overrides = self: super: {
-    stack2nix = disableSharedExecutables super.stack2nix;
+    stackage2nix = disableSharedExecutables super.stackage2nix;
   };
 }
 ```
 
 ```
-nix-build -A stack2nix override.nix
+nix-build -A stackage2nix override.nix
 ```
 
 For more complex overrides and detailed information on how to work with Haskell packages in Nix, see Nixpkgs manual [User’s Guide to the Haskell Infrastructure](http://nixos.org/nixpkgs/manual/#users-guide-to-the-haskell-infrastructure)
@@ -54,5 +54,5 @@ For more complex overrides and detailed information on how to work with Haskell 
 
 ## Examples
 
-For other examples of `stack2nix` usage, see [4e6/stack2nix-examples](https://github.com/4e6/stack2nix-examples) repository.
-It verifies `stack2nix` by running it on different public projects.
+For other examples of `stackage2nix` usage, see [4e6/stackage2nix-examples](https://github.com/4e6/stackage2nix-examples) repository.
+It verifies `stackage2nix` by running it on different public projects.
