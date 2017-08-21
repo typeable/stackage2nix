@@ -16,7 +16,6 @@ import Runner.Cli
 import Stack.Config
 import Stack.Types
 import Stackage.Types
-import System.FilePath as Path
 import System.IO (withFile, IOMode(..), hPutStrLn, hPrint)
 import Text.PrettyPrint.HughesPJClass (render)
 
@@ -32,11 +31,7 @@ run = do
     Just p  -> putStrLn "Getting project config file from STACK_YAML environment" $> p
     Nothing -> pure $ opts ^. optStackYaml
   stackConf <- either fail pure =<< readStackConfig stackYaml
-  let
-    buildPlanFile =
-      (opts ^. optLtsHaskellRepo) Path.</>
-      (stackConf ^. scResolver . to unStackResolver) Path.<.>
-      ".yaml"
+  let buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) (stackConf ^. scResolver)
   buildPlan <- LH.loadBuildPlan buildPlanFile
   packageSetConfig <- LH.buildPackageSetConfig
     (opts ^. optAllCabalHashesRepo)

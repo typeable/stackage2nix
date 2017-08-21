@@ -1,8 +1,8 @@
 module LtsHaskell where
 
 import AllCabalHashes
-import Stackage.BuildPlan
-import Stackage.Types (SystemInfo(..))
+import Control.Lens
+import Data.Maybe
 import Distribution.Text (display)
 import Control.Monad
 import Distribution.Compiler (CompilerInfo(..), AbiTag(NoAbiTag), CompilerId(..), CompilerFlavor(GHC))
@@ -15,8 +15,10 @@ import Distribution.Nixpkgs.PackageMap (readNixpkgPackageMap, resolve)
 import Distribution.Version (Version, withinRange)
 import Language.Haskell.Extension (Language(Haskell98, Haskell2010))
 import Language.Nix
-import Control.Lens
-import Data.Maybe
+import Stack.Config
+import Stackage.BuildPlan
+import Stackage.Types (SystemInfo(..))
+import System.FilePath as Path
 
 import qualified Data.Yaml as Yaml
 import qualified Data.Map as Map
@@ -66,3 +68,10 @@ buildPackageSetConfig optAllCabalHashes optNixpkgsRepository buildPlan = do
     , targetCompiler  = ghcCompilerInfo (siGhcVersion systemInfo)
     , nixpkgsResolver = resolve (Map.map (Set.map (over path ("pkgs":))) nixpkgs)
     , haskellResolver = buildPlanContainsDependency packageVersions }
+
+-- Path to Yaml build definition file in lts-haskell repository
+buildPlanFilePath :: FilePath -> StackResolver -> FilePath
+buildPlanFilePath ltsRepoDir resolver =
+  ltsRepoDir Path.</>
+  (resolver ^. to unStackResolver) Path.<.>
+  ".yaml"
