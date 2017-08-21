@@ -54,14 +54,13 @@ callStackageConfig path = hsep
 
 overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
 overrideHaskellPackages oc packages =
-  let nixpkgs = fromString $ oc ^. ocNixpkgs
+  let
+    nixpkgs = if oc ^. ocNixpkgs . to fromString == systemNixpkgs
+      then systemNixpkgs
+      else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
   in vcat
   [ funargs
-    [ "nixpkgs ? import "
-      <> if nixpkgs == systemNixpkgs
-         then nixpkgs
-         else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
-      <> " {}"
+    [ "nixpkgs ? import " <> nixpkgs <> " {}"
     ]
   , ""
   , "with nixpkgs;"
