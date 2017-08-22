@@ -1,21 +1,40 @@
-sudo: false
+sudo: required
+
+language: generic
 
 addons:
   apt:
     packages:
     - libgmp-dev
 
-# Caching so the next build will be fast too.
 cache:
   directories:
+  - $HOME/.local/bin
   - $HOME/.stack
+  - $HOME/.nix
+
+jobs:
+  include:
+    - stage: test
+      script:
+      - stack --no-terminal --install-ghc build --fast --only-dependencies
+      - stack --no-terminal --install-ghc test --fast --pedantic
+      - stack --no-terminal install
+    - stage: bootstrap
+      script:
+      - nix-env -i nix-prefetch-git
+      - nix-shell -p cabal-install --run 'cabal update'
+      - ./stackage2nix-test --dry-run
 
 before_install:
 # Download and unpack the stack executable
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-
-script:
-- stack -j2 --no-terminal --install-ghc build --fast --only-dependencies
-- stack -j2 --no-terminal --install-ghc test --fast --pedantic
+# Install Nix
+- mkdir -p ~/.nix
+- sudo mkdir -p /nix
+- sudo chmod a+w /nix
+- sudo mount --bind ~/.nix /nix
+- curl https://nixos.org/nix/install | sh
+- source ~/.nix-profile/etc/profile.d/nix.sh
