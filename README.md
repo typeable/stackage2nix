@@ -28,6 +28,14 @@ A particular package from result Haskell packages set can be built with:
 nix-build -A <package-name>
 ```
 
+## Runtime dependencies
+
+- `nix-env` is required to be on PATH by the
+  [distribution-nixpkgs](https://hackage.haskell.org/package/distribution-nixpkgs)
+  dependency
+- `nix-prefetch-git` is required on PATH if you have git dependencies in
+  `stack.yaml`
+
 ## Override result derivation
 
 Complex projects may require some extra customization.
