@@ -1,12 +1,9 @@
 resolver: lts-9.1
 packages:
 - '.'
-- location:
-    git: https://github.com/fpco/stackage-curator.git
-    commit: 3a3feeb6cc9e40bfbd7383c5e8975cd16420d822
-  extra-dep: true
 extra-deps:
 - Cabal-2.0.0.2
 - cabal2nix-2.5
+- stackage-curator-0.15.0.0
 nix:
   packages: [icu openssl zlib]
