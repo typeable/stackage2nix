@@ -49,7 +49,7 @@ library
                      , network-uri
                      , optparse-applicative
                      , pretty
-                     , stackage-curator
+                     , stackage-curator >= 0.15
                      , text
                      , unordered-containers
                      , yaml
