@@ -20,6 +20,7 @@ data Options = Options
   , _optLtsHaskellRepo      :: !FilePath
   , _optOutStackagePackages :: !FilePath
   , _optOutStackageConfig   :: !FilePath
+  , _optOutPackagesClosure  :: !Bool
   , _optOutDerivation       :: !FilePath
   , _optDoCheckPackages     :: !Bool
   , _optDoHaddockPackages   :: !Bool
@@ -53,6 +54,7 @@ options = Options
   <*> ltsHaskellRepo
   <*> outStackagePackages
   <*> outStackageConfig
+  <*> outPackagesClosure
   <*> outDerivation
   <*> doCheckPackages
   <*> doHaddockPackages
@@ -107,6 +109,11 @@ outStackageConfig = option str
     <> help "output file of the stackage packages compiler config"
     <> value "configuration-packages.nix"
     <> showDefaultWith id)
+
+outPackagesClosure :: Parser Bool
+outPackagesClosure = flag True False
+  ( long "no-packages-closure"
+    <> help "produce full set of stackage packages, not just dependencies" )
 
 outDerivation :: Parser FilePath
 outDerivation = option str
