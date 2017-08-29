@@ -28,6 +28,9 @@ A particular package from result Haskell packages set can be built with:
 nix-build -A <package-name>
 ```
 
+See also the [blog post](https://blog.typeable.io/posts/2017-08-24-stackage2nix.html)
+about history and motivation behind the project.
+
 ## Runtime dependencies
 
 - `nix-env` is required to be on PATH by the
