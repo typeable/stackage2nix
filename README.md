@@ -1,6 +1,6 @@
 # stackage2nix
 
-[![Build Status](https://travis-ci.org/4e6/stackage2nix.svg?branch=master)](https://travis-ci.org/4e6/stackage2nix)
+[![Build Status](https://travis-ci.org/typeable/stackage2nix.svg?branch=master)](https://travis-ci.org/typeable/stackage2nix)
 
 `stackage2nix` converts a Stack file into a Nix Haskell packages set.
 It creates LTS Stackage packages set, and applies appropriate overrides on top of it.
