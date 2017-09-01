@@ -28,6 +28,12 @@ packages:
   - location:
       git: git@github.com:commercialhaskell/stack.git
       commit: 6a86ee32e5b869a877151f74064572225e1a0398
+  - location:
+      git: git@github.com:example/mega-repo
+      commit: 6a86ee32e5b869a877151f74064572225e1a0000
+    subdirs:
+      - subdir1
+      - subdir2
 # Comment
 extra-deps:
 - acme-missiles-0.3
@@ -45,13 +51,19 @@ config = Config
   { _cResolver = "lts-3.7"
   , _cPackages = Just
     [ Simple "."
-    , LocationSimple (Location "dir1/dir2" Nothing)
-    , LocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True))
+    , LocationSimple (Location "dir1/dir2" Nothing Nothing)
+    , LocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True) Nothing)
     , LocationGit $ Location
        (Git
         "git@github.com:commercialhaskell/stack.git"
         "6a86ee32e5b869a877151f74064572225e1a0398")
-       Nothing]
+       Nothing Nothing
+    , LocationGit (Location
+       (Git
+        "git@github.com:example/mega-repo"
+        "6a86ee32e5b869a877151f74064572225e1a0000")
+       Nothing (Just ["subdir1", "subdir2"]))
+    ]
   , _cExtraDeps = Just
     ["acme-missiles-0.3"]
   }

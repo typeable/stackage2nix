@@ -9,6 +9,7 @@ import Data.Coerce
 import Data.Foldable as F
 import Data.List.NonEmpty as NE
 import Data.Maybe
+import Data.Semigroup (sconcat)
 import Data.Text as T
 import Data.Yaml
 import Network.URI
@@ -48,6 +49,8 @@ makePrisms ''PackageLocation
 data StackPackage = StackPackage
   { _spLocation :: !PackageLocation
   , _spExtraDep :: !Bool
+    -- | Subdirectory containing the cabal file if any specified.
+  , _spDir  :: !(Maybe FilePath)
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackPackage
@@ -62,28 +65,39 @@ makeLenses ''StackConfig
 fromYamlConfig :: Yaml.Config -> StackConfig
 fromYamlConfig c = StackConfig{..}
   where
-    _scResolver    = coerce $ c ^. cResolver
-    _scPackages    = F.foldr (NE.<|) neYamlPackages yamlExtraDeps
-    neYamlPackages = fromMaybe (pure defaultPackage) $ NE.nonEmpty yamlPackages
-    yamlPackages   = fromYamlPackage <$> fromMaybe mempty (c ^. cPackages)
+    _scResolver = coerce $ c ^. cResolver
+    _scPackages = F.foldr (NE.<|) neYamlPackages yamlExtraDeps
+    neYamlPackages = fromMaybe (pure defaultPackage)
+                   . fmap sconcat $ NE.nonEmpty yamlPackages
+    yamlPackages   = fromYamlPackage <$> (fromMaybe mempty (c ^. cPackages))
     yamlExtraDeps  = fromYamlExtraDep <$> fromMaybe mempty (c ^. cExtraDeps)
-    defaultPackage = StackPackage (StackFilePath ".") False
+    defaultPackage = StackPackage (StackFilePath ".") False Nothing
 
-fromYamlPackage :: Yaml.Package -> StackPackage
+
+fromYamlPackage
+  :: Yaml.Package
+     -- | A single 'Yaml.Package' can result in multiple actual
+     -- packages if it has multiple subdirs specified.
+  -> NonEmpty StackPackage
 fromYamlPackage = \case
   Yaml.Simple p                                  ->
-    StackPackage (parseSimplePath p) False
-  Yaml.LocationSimple (Yaml.Location p extraDep) ->
-    StackPackage (parseSimplePath p) (fromMaybe False extraDep)
-  Yaml.LocationGit (Location git extraDep)       ->
-    StackPackage (StackRepo $ fromYamlGit git) (fromMaybe False extraDep)
-  Yaml.LocationHg (Location hg extraDep)       ->
-    StackPackage (StackRepo $ fromYamlHg hg) (fromMaybe False extraDep)
+    unroll Nothing $ StackPackage (parseSimplePath p) False
+  Yaml.LocationSimple (Location p extraDep ms) ->
+    unroll ms $ StackPackage (parseSimplePath p) (fromMaybe False extraDep)
+  Yaml.LocationGit (Location git extraDep ms)       ->
+    unroll ms $ StackPackage (StackRepo $ fromYamlGit git) (fromMaybe False extraDep)
+  Yaml.LocationHg (Location hg extraDep ms)       ->
+    unroll ms $ StackPackage (StackRepo $ fromYamlHg hg) (fromMaybe False extraDep)
   where
     parseSimplePath (T.unpack -> p) = maybe (StackFilePath p) StackUri $ parseURI p
+    -- Each package gets a single directory with cabal file in it. If
+    -- it's not specified, path is empty.
+    unroll subs p = case subs of
+      Just (x : xs) -> NE.map (p . Just) (x :| xs)
+      _ -> p Nothing :| []
 
 fromYamlExtraDep :: Text -> StackPackage
-fromYamlExtraDep = flip StackPackage True . HackagePackage
+fromYamlExtraDep t = StackPackage (HackagePackage t) True Nothing
 
 fromYamlGit :: Yaml.Git -> Repo
 fromYamlGit yg = Repo{..}
