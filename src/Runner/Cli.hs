@@ -10,10 +10,20 @@ import           Distribution.System as System
 import qualified Distribution.Text as Text
 import           Options.Applicative as Opts
 import           Paths_stackage2nix ( version )
+import           Stack.Config
 import           Stack.Types
 import           System.Environment
 import           System.FilePath
 
+-- | Which source to use
+data Target
+  = TargetResolver StackResolver
+  -- ^ Resolver to generate Stackage LTS
+  | TargetStackYaml StackYaml
+  -- ^ Stack config to generate build derivation
+  deriving (Show)
+
+makePrisms ''Target
 
 data Options = Options
   { _optAllCabalHashesRepo  :: !FilePath
@@ -30,16 +40,13 @@ data Options = Options
   , _optNixpkgsRepository   :: !FilePath
   , _optCompilerId          :: !CompilerId
   , _optPlatform            :: !Platform
-  , _optStackYamlArg        :: !FilePath
+  , _optTarget              :: !Target
   } deriving (Show)
 
 makeLenses ''Options
 
 envStackYaml :: IO (Maybe StackYaml)
 envStackYaml = fmap mkStackYaml <$> lookupEnv "STACK_YAML"
-
-optStackYaml :: Getter Options StackYaml
-optStackYaml = optStackYamlArg . to mkStackYaml
 
 mkStackYaml :: FilePath -> StackYaml
 mkStackYaml p = case splitFileName p of
@@ -64,7 +71,7 @@ options = Options
   <*> nixpkgsRepository
   <*> compilerId
   <*> platform
-  <*> stackYamlArg
+  <*> target
 
 pinfo :: ParserInfo Options
 pinfo = info
@@ -143,10 +150,19 @@ doHaddockStackage = switch
   ( long "do-haddock-stackage"
     <> help "enable haddock for Stackage packages" )
 
-stackYamlArg :: Parser FilePath
-stackYamlArg = Opts.argument str
+resolver :: Parser StackResolver
+resolver = StackResolver <$> option text
+  ( long "resolver"
+    <> help "stackage LTS resolver" )
+
+stackYamlArg :: Parser StackYaml
+stackYamlArg = mkStackYaml <$> Opts.argument str
   ( metavar "STACK_YAML"
     <> help "path to stack.yaml file or directory" )
+
+target :: Parser Target
+target = TargetResolver <$> resolver
+  <|> TargetStackYaml <$> stackYamlArg
 
 -- inherited from cabal2nix
 
