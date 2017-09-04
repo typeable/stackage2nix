@@ -1,6 +1,7 @@
 module Distribution.Nixpkgs.Haskell.Stack where
 
 import Control.Lens
+import Data.Maybe (fromMaybe)
 import Data.Text as T
 import Distribution.Compiler as Compiler
 import Distribution.Nixpkgs.Fetch
@@ -42,30 +43,36 @@ getStackPackageFromDb
 getStackPackageFromDb optHackageDb stackPackage =
   PackageSourceSpec.getPackage
     (unHackageDb <$> optHackageDb)
-    (stackLocationToSource $ stackPackage ^. spLocation)
+    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
 
-stackLocationToSource :: PackageLocation -> Source
-stackLocationToSource = \case
+stackLocationToSource
+  :: PackageLocation
+     -- | Subdirectory in the package containing cabal file.
+  -> Maybe FilePath
+  -> Source
+stackLocationToSource pl mCabalDir = case pl of
   HackagePackage p -> Source
     { sourceUrl      = "cabal://" ++ T.unpack p
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
-    , sourceCabalDir = mempty }
+    , sourceCabalDir = cabalDir }
   StackFilePath p  -> Source
     { sourceUrl      = p
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
-    , sourceCabalDir = mempty }
+    , sourceCabalDir = cabalDir }
   StackUri uri     -> Source
     { sourceUrl      = URI.uriToString id uri mempty
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
-    , sourceCabalDir = mempty }
+    , sourceCabalDir = cabalDir }
   StackRepo r      -> Source
     { sourceUrl      = T.unpack $ r ^. rUri
     , sourceRevision = T.unpack $ r ^. rCommit
     , sourceHash     = UnknownHash
-    , sourceCabalDir = mempty }
+    , sourceCabalDir = cabalDir }
+  where
+    cabalDir = fromMaybe mempty mCabalDir
 
 packageDerivation
   :: StackPackagesConfig
@@ -79,6 +86,7 @@ packageDerivation conf optHackageDb stackPackage = do
       & src .~ pkgSource pkg
       -- TODO: remove after Nixos/Nixpkgs #27196 released
       & enableSeparateDataOutput .~ False
+      & subpath %~ flip fromMaybe (stackPackage ^. spDir)
   return $ if stackPackage ^. spExtraDep
     then drv
       & doCheck &&~ conf ^. spcDoCheckStackage

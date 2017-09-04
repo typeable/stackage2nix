@@ -10,6 +10,7 @@ import Stack.Config.TH
 data Location a = Location
   { _lLocation :: !a
   , _lExtraDep :: !(Maybe Bool)
+  , _lSubdirs :: !(Maybe [FilePath])
   } deriving (Eq, Show)
 
 makeLenses ''Location
