@@ -48,15 +48,15 @@ getPackageFromRepo allCabalHashesPath mSha1Hash pkgId = do
     source = DerivationSource "url" ("mirror://hackage/" ++ display pkgId ++ ".tar.gz") "" tarballSHA256
   return $ Package source pkgDesc
 
-getPackageFromDb :: PackageIdentifier -> IO Package
-getPackageFromDb pkgId =
-  getStackPackageFromDb Nothing
+getPackageFromDb :: Maybe HackageDb -> PackageIdentifier -> IO Package
+getPackageFromDb mHackageDb pkgId =
+  getStackPackageFromDb mHackageDb
   $ StackPackage (HackagePackage (T.pack $ Text.display pkgId)) True Nothing
 
-loadPackage :: FilePath -> Maybe SHA1Hash -> PackageIdentifier -> IO Package
-loadPackage allCabalHashesPath mSha1Hash pkgId =
+loadPackage :: Maybe HackageDb -> FilePath -> Maybe SHA1Hash -> PackageIdentifier -> IO Package
+loadPackage mHackageDb allCabalHashesPath mSha1Hash pkgId =
   getPackageFromRepo allCabalHashesPath mSha1Hash pkgId
-  `catchIOError` const (getPackageFromDb pkgId)
+  `catchIOError` const (getPackageFromDb mHackageDb pkgId)
 
 ghcCompilerInfo :: Version -> CompilerInfo
 ghcCompilerInfo v = CompilerInfo
@@ -72,17 +72,18 @@ buildPlanContainsDependency packageVersions (Dependency depName versionRange) =
   maybe False (`withinRange` versionRange) $ Map.lookup depName packageVersions
 
 buildPackageSetConfig
-  :: FilePath
+  :: Maybe HackageDb
+  -> FilePath
   -> FilePath
   -> BuildPlan
   -> IO PackageSetConfig
-buildPackageSetConfig optAllCabalHashes optNixpkgsRepository buildPlan = do
+buildPackageSetConfig mHackageDb optAllCabalHashes optNixpkgsRepository buildPlan = do
   nixpkgs <- readNixpkgPackageMap optNixpkgsRepository Nothing
   let
     systemInfo      = bpSystemInfo buildPlan
     packageVersions = fmap ppVersion (bpPackages buildPlan) `Map.union` siCorePackages systemInfo
   return PackageSetConfig
-    { packageLoader   = loadPackage optAllCabalHashes
+    { packageLoader   = loadPackage mHackageDb optAllCabalHashes
     , targetPlatform  = Platform (siArch systemInfo) (siOS systemInfo)
     , targetCompiler  = ghcCompilerInfo (siGhcVersion systemInfo)
     , nixpkgsResolver = resolve (Map.map (Set.map (over path ("pkgs":))) nixpkgs)
