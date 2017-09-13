@@ -36,6 +36,7 @@ run = do
       let buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) (stackConf ^. scResolver)
       buildPlan <- LH.loadBuildPlan buildPlanFile
       packageSetConfig <- LH.buildPackageSetConfig
+        (opts ^. optHackageDb)
         (opts ^. optAllCabalHashesRepo)
         (opts ^. optNixpkgsRepository)
         buildPlan
@@ -87,6 +88,7 @@ run = do
           , enableHaddock = opts ^. optDoHaddockStackage }
       buildPlan <- LH.loadBuildPlan buildPlanFile
       packageSetConfig <- LH.buildPackageSetConfig
+        (opts ^. optHackageDb)
         (opts ^. optAllCabalHashesRepo)
         (opts ^. optNixpkgsRepository)
         buildPlan
