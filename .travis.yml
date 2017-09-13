@@ -22,8 +22,8 @@ jobs:
       - stack --no-terminal install
     - stage: bootstrap
       script:
-      - nix-env -i nix-prefetch-git
-      - nix-shell -p cabal-install --run 'cabal update'
+      - nix-env -i cabal-install
+      - cabal update
       - ./stackage2nix-test --dry-run
 
 before_install:
