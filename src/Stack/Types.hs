@@ -10,6 +10,7 @@ import System.FilePath
 data StackYaml = StackYaml
   { _syDirName  :: !FilePath
   , _syFileName :: !FilePath }
+  deriving (Ord, Eq, Show)
 
 makeLenses ''StackYaml
 
