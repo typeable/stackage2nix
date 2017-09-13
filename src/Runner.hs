@@ -30,6 +30,7 @@ run :: IO ()
 run = do
   opts <- execParser pinfo
   case opts ^. optConfigOrigin of
+    -- Generate build derivation from stack.yaml file
     OriginStackYaml stackYaml -> do
       stackConf <- either fail pure =<< readStackConfig stackYaml
       let buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) (stackConf ^. scResolver)
@@ -38,16 +39,15 @@ run = do
         (opts ^. optAllCabalHashesRepo)
         (opts ^. optNixpkgsRepository)
         buildPlan
-      -- generate haskell packages override
       let
         overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
         stackPackagesConfig = mkStackPackagesConfig opts
-      packages <- traverse (packageDerivation stackPackagesConfig (opts ^. optHackageDb))
+      stackConfPackages <- traverse (packageDerivation stackPackagesConfig (opts ^. optHackageDb))
         $ stackConf ^. scPackages
       let
         reachable = Set.map mkPackageName
           $ F.foldr1 Set.union
-          $ nodeDepends . mkNode <$> packages
+          $ nodeDepends . mkNode <$> stackConfPackages
         s2nLoader mHash pkgId =
           if pkgName pkgId `Set.member` reachable
           then packageLoader packageSetConfig Nothing pkgId
@@ -56,7 +56,7 @@ run = do
         s2nPackageConfig = PackageConfig
           { enableCheck   = opts ^. optDoCheckStackage
           , enableHaddock = opts ^. optDoHaddockStackage }
-      allNodes <- traverse (uncurry (buildNodeM s2nPackageSetConfig s2nPackageConfig))
+      stackagePackages <- traverse (uncurry (buildNodeM s2nPackageSetConfig s2nPackageConfig))
         $ Map.toList (bpPackages buildPlan)
 
       -- Find all reachable dependencies in stackage set to stick into
@@ -66,18 +66,19 @@ run = do
       -- does: pruning only after generating full set of packages allows
       -- us to make sure all those extra dependencies are explicitly
       -- listed as well.
-      let nodes = case opts ^. optOutPackagesClosure of
-            True -> flip reachableDependencies allNodes
+      let reachableStackagePackages = case opts ^. optOutPackagesClosure of
+            True -> flip reachableDependencies stackagePackages
                     -- Originally reachable nodes are root nodes
-                    $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) allNodes
-            False -> allNodes
+                    $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
+            False -> stackagePackages
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
-        $ pPrintOutPackages (view nodeDerivation <$> nodes)
+        $ pPrintOutPackages (view nodeDerivation <$> reachableStackagePackages)
       writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
-        $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
+        $ pPrintOutConfig (bpSystemInfo buildPlan) reachableStackagePackages
       writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-        $ PP.overrideHaskellPackages overrideConfig packages
+        $ PP.overrideHaskellPackages overrideConfig stackConfPackages
 
+    -- Generate Stackage packages from resolver
     OriginResolver stackResolver -> do
       let
         buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) stackResolver
