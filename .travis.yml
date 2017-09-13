@@ -24,7 +24,7 @@ jobs:
       script:
       - nix-env -i cabal-install
       - cabal update
-      - ./stackage2nix-test --dry-run
+      - ./ci-stackage2nix --dry-run
 
 before_install:
 # Download and unpack the stack executable
