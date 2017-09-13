@@ -59,22 +59,25 @@ run = do
       stackagePackages <- traverse (uncurry (buildNodeM s2nPackageSetConfig s2nPackageConfig))
         $ Map.toList (bpPackages buildPlan)
 
-      -- Find all reachable dependencies in stackage set to stick into
-      -- stackage packages file. This is performed on the full stackage
-      -- set rather than pruning stackage packages beforehand because
-      -- stackage does not concern itself with build tools while cabal2nix
-      -- does: pruning only after generating full set of packages allows
-      -- us to make sure all those extra dependencies are explicitly
-      -- listed as well.
-      let reachableStackagePackages = case opts ^. optOutPackagesClosure of
-            True -> flip reachableDependencies stackagePackages
-                    -- Originally reachable nodes are root nodes
-                    $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
-            False -> stackagePackages
+      let
+        -- Find all reachable dependencies in stackage set to stick into
+        -- stackage packages file. This is performed on the full stackage
+        -- set rather than pruning stackage packages beforehand because
+        -- stackage does not concern itself with build tools while cabal2nix
+        -- does: pruning only after generating full set of packages allows
+        -- us to make sure all those extra dependencies are explicitly
+        -- listed as well.
+        reachableStackagePackages = case opts ^. optOutPackagesClosure of
+          True -> flip reachableDependencies stackagePackages
+            -- Originally reachable nodes are root nodes
+            $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
+          False -> stackagePackages
+        -- Sort final packages to make the order consistent
+        nodes = L.sortOn nodeName reachableStackagePackages
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
-        $ pPrintOutPackages (view nodeDerivation <$> reachableStackagePackages)
+        $ pPrintOutPackages (view nodeDerivation <$> nodes)
       writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
-        $ pPrintOutConfig (bpSystemInfo buildPlan) reachableStackagePackages
+        $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
       writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
         $ PP.overrideHaskellPackages overrideConfig stackConfPackages
 
