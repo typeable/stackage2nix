@@ -29,8 +29,8 @@ import qualified LtsHaskell as LH
 run :: IO ()
 run = do
   opts <- execParser pinfo
-  case opts ^. optTarget of
-    TargetStackYaml stackYaml -> do
+  case opts ^. optConfigOrigin of
+    OriginStackYaml stackYaml -> do
       stackConf <- either fail pure =<< readStackConfig stackYaml
       let buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) (stackConf ^. scResolver)
       buildPlan <- LH.loadBuildPlan buildPlanFile
@@ -71,7 +71,6 @@ run = do
                     -- Originally reachable nodes are root nodes
                     $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) allNodes
             False -> allNodes
-
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
         $ pPrintOutPackages (view nodeDerivation <$> nodes)
       writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
@@ -79,7 +78,7 @@ run = do
       writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
         $ PP.overrideHaskellPackages overrideConfig packages
 
-    TargetResolver stackResolver -> do
+    OriginResolver stackResolver -> do
       let
         buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) stackResolver
         packageConfig = PackageConfig

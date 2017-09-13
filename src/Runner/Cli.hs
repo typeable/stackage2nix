@@ -15,15 +15,15 @@ import           Stack.Types
 import           System.Environment
 import           System.FilePath
 
--- | Which source to use
-data Target
-  = TargetResolver StackResolver
+-- | Source that would be used to produce target derivation
+data ConfigOrigin
+  = OriginResolver StackResolver
   -- ^ Resolver to generate Stackage LTS
-  | TargetStackYaml StackYaml
+  | OriginStackYaml StackYaml
   -- ^ Stack config to generate build derivation
   deriving (Show)
 
-makePrisms ''Target
+makePrisms ''ConfigOrigin
 
 data Options = Options
   { _optAllCabalHashesRepo  :: !FilePath
@@ -40,7 +40,7 @@ data Options = Options
   , _optNixpkgsRepository   :: !FilePath
   , _optCompilerId          :: !CompilerId
   , _optPlatform            :: !Platform
-  , _optTarget              :: !Target
+  , _optConfigOrigin        :: !ConfigOrigin
   } deriving (Show)
 
 makeLenses ''Options
@@ -71,7 +71,7 @@ options = Options
   <*> nixpkgsRepository
   <*> compilerId
   <*> platform
-  <*> target
+  <*> configOrigin
 
 pinfo :: ParserInfo Options
 pinfo = info
@@ -160,9 +160,9 @@ stackYamlArg = mkStackYaml <$> Opts.argument str
   ( metavar "STACK_YAML"
     <> help "path to stack.yaml file or directory" )
 
-target :: Parser Target
-target = TargetResolver <$> resolver
-  <|> TargetStackYaml <$> stackYamlArg
+configOrigin :: Parser ConfigOrigin
+configOrigin = OriginResolver <$> resolver
+  <|> OriginStackYaml <$> stackYamlArg
 
 -- inherited from cabal2nix
 
