@@ -5,6 +5,19 @@
 `stackage2nix` converts a Stack file into a Nix Haskell packages set.
 It creates LTS Stackage packages set, and applies appropriate overrides on top of it.
 
+## Install
+
+You can install `stackage2nix` from the Nix expression:
+
+```
+nix-env -i -f ./nix/stackage2nix
+```
+
+It provides pre-configured wrapper around the raw executable with runtime
+`PATH` and all auxiliary flags set up.
+
+## Executable
+
 ```
 stackage2nix \
   --lts-haskell "$LTS_HASKELL_REPO" \
@@ -36,7 +49,7 @@ about history and motivation behind the project.
 - `nix-env` is required to be on PATH by the
   [distribution-nixpkgs](https://hackage.haskell.org/package/distribution-nixpkgs)
   dependency
-- `nix-prefetch-git` is required on PATH if you have git dependencies in
+- `nix-prefetch-scripts` is required on PATH if you have git dependencies in
   `stack.yaml`
 
 ## Override result derivation
