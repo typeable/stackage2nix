@@ -14,7 +14,7 @@ in stdenv.mkDerivation rec {
     mkdir -p $out/bin
     makeWrapper ${haskellPackages.stackage2nix}/bin/stackage2nix $out/bin/stackage2nix \
       --add-flags "--all-cabal-hashes ${lib.all-cabal-hashes}" \
-      --add-flags "--lts-haskell ${lib.stackage-lts}" \
+      --add-flags "--lts-haskell ${lib.stackage-all}" \
       --add-flags "--hackage-db ${lib.hackage-db}/01-index.tar" \
       --prefix PATH ":" "${nix}/bin" \
       --prefix PATH ":" "${nix-prefetch-scripts}/bin"
