@@ -1,7 +1,7 @@
-{ stdenv, cacert, git, curl
+{ stdenv, cacert, git, curl, lndir, runCommand
 , _cacheVersion ? "0" }:
 
-{
+rec {
   hackage-db = stdenv.mkDerivation {
     name = "hackage-db";
     version = _cacheVersion;
@@ -38,4 +38,23 @@
     '';
     SSL_CERT_FILE="${cacert}/etc/ssl/certs/ca-bundle.crt";
   };
+  stackage-nightly = stdenv.mkDerivation {
+    name = "stackage-nightly";
+    version = _cacheVersion;
+    phases = [ "installPhase" ];
+    buildInputs = [ git ];
+    installPhase = ''
+      mkdir -p $out
+      git clone --depth 1 https://github.com/fpco/stackage-nightly.git $out
+    '';
+    SSL_CERT_FILE="${cacert}/etc/ssl/certs/ca-bundle.crt";
+  };
+  stackage-all = runCommand "stackage-all"
+    {nativeBuildInputs = [ stackage-nightly stackage-lts lndir ];}
+    ''
+    mkdir $out
+    for i in ${stackage-nightly} ${stackage-lts}; do
+      lndir -silent $i $out
+    done
+    '';
 }
