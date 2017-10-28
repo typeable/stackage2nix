@@ -98,11 +98,14 @@ run = do
         buildPlan
       nodes <- traverse (uncurry (buildNode packageSetConfig packageConfig))
         $ Map.toAscList (bpPackages buildPlan)
+      let overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
 
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
         $ pPrintOutPackages (view nodeDerivation <$> nodes)
       writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
         $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
+      writeOutFile buildPlanFile (opts ^. optOutDerivation)
+        $ PP.pPrintHaskellPackages overrideConfig
 
 writeOutFile :: Show source => source -> FilePath -> Doc -> IO ()
 writeOutFile source filePath contents =

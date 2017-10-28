@@ -84,6 +84,37 @@ overrideHaskellPackages oc packages =
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
     , attr "compilerConfig" "self: extends pkgOverrides (extends stackageConfig (stackagePackages self))"
     , attr "haskellLib" "callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules/lib.nix\") {}"
+    , attr "initialPackages" "args: self: {}"
+    , attr "configurationCommon" "args: self: super: {}"
+    ]
+  , "}"
+  ]
+
+pPrintHaskellPackages :: OverrideConfig -> Doc
+pPrintHaskellPackages oc =
+  let
+    nixpkgs = if oc ^. ocNixpkgs . to fromString == systemNixpkgs
+      then systemNixpkgs
+      else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
+  in vcat
+  [ funargs
+    [ "nixpkgs ? import " <> nixpkgs <> " {}"
+    ]
+  , ""
+  , "with nixpkgs;"
+  , "let"
+  , nest 2 "inherit (stdenv.lib) extends;"
+  , nest 2 $ vcat
+    [ attr "stackagePackages" . importStackagePackages $ oc ^. ocStackagePackages
+    , attr "stackageConfig" . callStackageConfig $ oc ^. ocStackageConfig
+    ]
+  , "in callPackage (nixpkgs.path + /pkgs/development/haskell-modules) {"
+  , nest 2 $ vcat
+    [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
+    , attr "compilerConfig" "self: extends stackageConfig (stackagePackages self)"
+    , attr "haskellLib" "callPackage (nixpkgs.path + /pkgs/development/haskell-modules/lib.nix) {}"
+    , attr "initialPackages" "args: self: {}"
+    , attr "configurationCommon" "args: self: super: {}"
     ]
   , "}"
   ]
