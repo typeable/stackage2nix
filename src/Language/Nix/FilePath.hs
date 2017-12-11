@@ -11,7 +11,7 @@ import           Distribution.Compat.ReadP as ReadP
 import           Distribution.Text
 import           GHC.Generics (Generic)
 import           Prelude hiding (FilePath)
-import qualified System.FilePath.Posix as Posix
+import qualified System.FilePath as FP
 import           Test.QuickCheck as QC
 import           Text.PrettyPrint as PP
 
@@ -25,7 +25,7 @@ instance NFData FilePath where
   rnf = rnf . unFilePath
 
 instance Arbitrary FilePath where
-  arbitrary = FilePath <$> QC.suchThat arbitrary Posix.isValid
+  arbitrary = FilePath <$> QC.suchThat arbitrary FP.isValid
   shrink = fmap FilePath . shrink . unFilePath
 
 instance Text FilePath where
@@ -38,12 +38,12 @@ instance IsString FilePath where
 parseFilePath :: ReadP r FilePath
 parseFilePath = do
   path <- ReadP.munch (const True)
-  if Posix.isValid path
+  if FP.isValid path
     then pure (FilePath path)
     else pfail
 
 renderFilePath :: FilePath -> String
-renderFilePath = Posix.combine "."
-               . Posix.normalise
-               . Posix.dropTrailingPathSeparator
+renderFilePath = FP.combine "."
+               . FP.normalise
+               . FP.dropTrailingPathSeparator
                . unFilePath

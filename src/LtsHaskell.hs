@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module LtsHaskell where
 
 import AllCabalHashes
@@ -46,7 +47,11 @@ getPackageFromRepo allCabalHashesPath mSha1Hash pkgId = do
       (error (display pkgId ++ ": meta data has no SHA256 hash for the tarball"))
       (view (mHashes . at "SHA256") meta)
     source = DerivationSource "url" ("mirror://hackage/" ++ display pkgId ++ ".tar.gz") "" tarballSHA256
+#if MIN_VERSION_cabal2nix(2,6,0)
+  return $ Package source False pkgDesc
+#else
   return $ Package source pkgDesc
+#endif
 
 getPackageFromDb :: Maybe HackageDb -> PackageIdentifier -> IO Package
 getPackageFromDb mHackageDb pkgId =
