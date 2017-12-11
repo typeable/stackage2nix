@@ -3,7 +3,7 @@
 with nixpkgs;
 let
   lib = callPackage ../lib.nix {};
-  haskellPackages = import ../haskellPackages { inherit nixpkgs; };
+  haskellPackages = import ../haskell-packages { inherit nixpkgs; };
 in stdenv.mkDerivation rec {
   name = "stackage2nix-${version}";
   version = haskellPackages.stackage2nix.version;
