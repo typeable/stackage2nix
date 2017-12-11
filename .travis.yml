@@ -32,6 +32,7 @@ jobs:
       script:
       - nix-env -i cabal-install
       - cabal update
+      - nix-build nix/stackage2nix --dry-run
       - ./ci-stackage2nix --dry-run
 
 before_install:
