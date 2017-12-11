@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Distribution.Nixpkgs.Haskell.Stack where
 
 import Control.Lens
@@ -7,6 +8,7 @@ import Distribution.Compiler as Compiler
 import Distribution.Nixpkgs.Fetch
 import Distribution.Nixpkgs.Haskell.Derivation
 import Distribution.Nixpkgs.Haskell.FromCabal as FromCabal
+import Distribution.Nixpkgs.Haskell.FromStack as FromStack
 import Distribution.Nixpkgs.Haskell.PackageSourceSpec as PackageSourceSpec
 import Distribution.PackageDescription as PackageDescription
 import Distribution.System as System
@@ -41,9 +43,17 @@ getStackPackageFromDb
   -> StackPackage
   -> IO Package
 getStackPackageFromDb optHackageDb stackPackage =
+#if MIN_VERSION_cabal2nix(2,6,0)
+  PackageSourceSpec.getPackage
+    False
+    (unHackageDb <$> optHackageDb)
+    Nothing
+    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
+#else
   PackageSourceSpec.getPackage
     (unHackageDb <$> optHackageDb)
     (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
+#endif
 
 stackLocationToSource
   :: PackageLocation
@@ -83,17 +93,12 @@ packageDerivation conf optHackageDb stackPackage = do
   pkg <- getStackPackageFromDb optHackageDb stackPackage
   let
     drv = genericPackageDerivation conf pkg
-      & src .~ pkgSource pkg
-      -- TODO: remove after Nixos/Nixpkgs #27196 released
-      & enableSeparateDataOutput .~ False
       & subpath %~ flip fromMaybe (stackPackage ^. spDir)
-  return $ if stackPackage ^. spExtraDep
-    then drv
-      & doCheck &&~ conf ^. spcDoCheckStackage
-      & runHaddock &&~ conf ^. spcDoHaddockStackage
-    else drv
-      & doCheck &&~ conf ^. spcDoCheckPackages
-      & runHaddock &&~ conf ^. spcDoHaddockPackages
+    isExtraDep = stackPackage ^. spExtraDep
+    pconf = PackageConfig
+      { enableCheck = if isExtraDep then conf ^. spcDoCheckStackage else conf ^. spcDoCheckPackages
+      , enableHaddock = if isExtraDep then conf ^. spcDoHaddockStackage else conf ^. spcDoHaddockPackages }
+  return $ finalizePackage pkg pconf drv
 
 genericPackageDerivation
   :: StackPackagesConfig
