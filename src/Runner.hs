@@ -57,7 +57,7 @@ run = do
         s2nPackageConfig = PackageConfig
           { enableCheck   = opts ^. optDoCheckStackage
           , enableHaddock = opts ^. optDoHaddockStackage }
-      stackagePackages <- traverse (uncurry (buildNodeM s2nPackageSetConfig s2nPackageConfig))
+      stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
         $ Map.toList (bpPackages buildPlan)
 
       let
@@ -95,7 +95,7 @@ run = do
         (opts ^. optAllCabalHashesRepo)
         (opts ^. optNixpkgsRepository)
         buildPlan
-      nodes <- traverse (uncurry (buildNodeM packageSetConfig packageConfig))
+      nodes <- traverse (uncurry (buildNode packageSetConfig packageConfig))
         $ Map.toList (bpPackages buildPlan)
 
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)

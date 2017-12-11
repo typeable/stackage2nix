@@ -26,21 +26,21 @@ data ConfigOrigin
 makePrisms ''ConfigOrigin
 
 data Options = Options
-  { _optAllCabalHashesRepo  :: !FilePath
-  , _optLtsHaskellRepo      :: !FilePath
-  , _optOutStackagePackages :: !FilePath
-  , _optOutStackageConfig   :: !FilePath
-  , _optOutPackagesClosure  :: !Bool
-  , _optOutDerivation       :: !FilePath
-  , _optDoCheckPackages     :: !Bool
-  , _optDoHaddockPackages   :: !Bool
-  , _optDoCheckStackage     :: !Bool
-  , _optDoHaddockStackage   :: !Bool
-  , _optHackageDb           :: !(Maybe HackageDb)
-  , _optNixpkgsRepository   :: !FilePath
-  , _optCompilerId          :: !CompilerId
-  , _optPlatform            :: !Platform
-  , _optConfigOrigin        :: !ConfigOrigin
+  { _optAllCabalHashesRepo  :: FilePath
+  , _optLtsHaskellRepo      :: FilePath
+  , _optOutStackagePackages :: FilePath
+  , _optOutStackageConfig   :: FilePath
+  , _optOutPackagesClosure  :: Bool
+  , _optOutDerivation       :: FilePath
+  , _optDoCheckPackages     :: Bool
+  , _optDoHaddockPackages   :: Bool
+  , _optDoCheckStackage     :: Bool
+  , _optDoHaddockStackage   :: Bool
+  , _optHackageDb           :: (Maybe HackageDb)
+  , _optNixpkgsRepository   :: FilePath
+  , _optCompilerId          :: CompilerId
+  , _optPlatform            :: Platform
+  , _optConfigOrigin        :: ConfigOrigin
   } deriving (Show)
 
 makeLenses ''Options

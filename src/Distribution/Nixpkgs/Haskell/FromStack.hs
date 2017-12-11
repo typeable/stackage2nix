@@ -37,8 +37,8 @@ planDependencies = map makeDependency . Map.toList . sdPackages . ppDesc
  where
   makeDependency (name, depInfo) = Dependency name (diRange depInfo)
 
-buildNodeM :: PackageSetConfig -> PackageConfig -> PackageName -> PackagePlan -> IO Node
-buildNodeM conf pconf name plan = do
+buildNode :: PackageSetConfig -> PackageConfig -> PackageName -> PackagePlan -> IO Node
+buildNode conf pconf name plan = do
   let
     cabalHashes = maybe mempty cfiHashes $ ppCabalFileInfo plan
     mGitSha1 = Map.lookup "GitSHA1" cabalHashes
@@ -50,10 +50,8 @@ fromPackage conf pconf plan pkg =
   let
     constraints = ppConstraints plan
     testsEnabled =
-      enableCheck pconf &&
       pcTests constraints == ExpectSuccess
     haddocksEnabled =
-      enableHaddock pconf &&
       pcHaddocks constraints == ExpectSuccess &&
       not (Set.null (sdModules (ppDesc plan)))
     configureTests
@@ -83,11 +81,16 @@ fromPackage conf pconf plan pkg =
       testsEnabled &&
       not (null missingDeps) &&
       setOf (folded . to depName) missingDeps `hasIntersection` testDeps descr
-  in
-    genericDrv
-      & src .~ pkgSource pkg
+  in finalizePackage pkg pconf
+    $ genericDrv
       & doCheck .~ testsEnabled
       & runHaddock .~ haddocksEnabled
       & metaSection . Nix.broken .~ brokenEnabled
-      -- TODO: remove after Nixos/Nixpkgs #27196 released
-      & enableSeparateDataOutput .~ False
+
+finalizePackage :: Package -> PackageConfig -> Derivation -> Derivation
+finalizePackage pkg pconf drv = drv
+  & src .~ pkgSource pkg
+  & doCheck &&~ enableCheck pconf
+  & runHaddock &&~ enableHaddock pconf
+  -- Will never run benchmarks
+  & benchmarkDepends .~ mempty
