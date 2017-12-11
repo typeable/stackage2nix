@@ -16,7 +16,7 @@ if [ ! -d "$ALL_CABAL_HASHES_DIR" ]; then
 fi
 
 set -x
-stack exec -- stackage2nix \
+time stack exec -- stackage2nix \
   --lts-haskell "$STACKAGE_REPO" \
   --all-cabal-hashes "$ALL_CABAL_HASHES_DIR" \
   --hackage-db "$HOME/.cabal/packages/hackage.haskell.org/01-index.tar" \

@@ -59,7 +59,7 @@ run = do
           , enableHaddock   = opts ^. optDoHaddockStackage
           , enableBenchmark = False }
       stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
-        $ Map.toList (bpPackages buildPlan)
+        $ Map.toAscList (bpPackages buildPlan)
 
       let
         -- Find all reachable dependencies in stackage set to stick into
@@ -69,13 +69,12 @@ run = do
         -- does: pruning only after generating full set of packages allows
         -- us to make sure all those extra dependencies are explicitly
         -- listed as well.
-        reachableStackagePackages = case opts ^. optOutPackagesClosure of
-          True -> flip reachableDependencies stackagePackages
+        nodes = case opts ^. optOutPackagesClosure of
+          True -> Set.toAscList
+            $ flip reachableDependencies stackagePackages
             -- Originally reachable nodes are root nodes
             $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
           False -> stackagePackages
-        -- Sort final packages to make the order consistent
-        nodes = L.sortOn nodeName reachableStackagePackages
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
         $ pPrintOutPackages (view nodeDerivation <$> nodes)
       writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
@@ -98,7 +97,7 @@ run = do
         (opts ^. optNixpkgsRepository)
         buildPlan
       nodes <- traverse (uncurry (buildNode packageSetConfig packageConfig))
-        $ Map.toList (bpPackages buildPlan)
+        $ Map.toAscList (bpPackages buildPlan)
 
       writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
         $ pPrintOutPackages (view nodeDerivation <$> nodes)

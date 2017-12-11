@@ -1,8 +1,9 @@
 module Distribution.Nixpkgs.Haskell.FromStack.Package where
 
 import Control.Lens
-import Data.Graph (Graph, Vertex)
 import Data.Foldable as F
+import Data.Function (on)
+import Data.Graph (Graph, Vertex)
 import Data.Maybe
 import Data.Monoid
 import Data.Ord as O
@@ -27,6 +28,12 @@ data Node = Node
   , _nodeOtherDepends :: Set.Set String }
 
 makeLenses ''Node
+
+instance Eq Node where
+  (==) = (==) `on` nodeName
+
+instance Ord Node where
+  compare = compare `on` nodeName
 
 mkNode :: Derivation -> Node
 mkNode _nodeDerivation = Node{..}
@@ -73,12 +80,13 @@ buildNodeGraph :: [Node] -> (Graph, FromVertex, FromKey)
 buildNodeGraph nodes = Graph.graphFromEdges
   [(node, nodeName node, Set.toList $ nodeDepends node) | node <- nodes]
 
-reachableDependencies :: [Node] -> [Node] -> [Node]
-reachableDependencies keyNodes nodes = view _1 . fromVertex <$> reachableVertices
+reachableDependencies :: [Node] -> [Node] -> Set.Set Node
+reachableDependencies keyNodes nodes = Set.map (view _1 . fromVertex) reachableVerticesS
   where
     (graph, fromVertex, fromKey) = buildNodeGraph nodes
     keys = mapMaybe (fromKey . nodeName) keyNodes
-    reachableVertices = concatMap F.toList $ Graph.dfs graph keys
+    reachableVerticesS = F.foldr1 Set.union
+      $ (Set.fromList . F.toList) <$> Graph.dfs graph keys
 
 -- pretty printing
 
