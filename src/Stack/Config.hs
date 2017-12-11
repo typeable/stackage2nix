@@ -76,7 +76,7 @@ fromYamlConfig c = StackConfig{..}
 
 fromYamlPackage
   :: Yaml.Package
-     -- | A single 'Yaml.Package' can result in multiple actual
+     -- ^ A single 'Yaml.Package' can result in multiple actual
      -- packages if it has multiple subdirs specified.
   -> NonEmpty StackPackage
 fromYamlPackage = \case

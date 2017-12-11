@@ -47,7 +47,7 @@ getStackPackageFromDb optHackageDb stackPackage =
 
 stackLocationToSource
   :: PackageLocation
-     -- | Subdirectory in the package containing cabal file.
+     -- ^ Subdirectory in the package containing cabal file.
   -> Maybe FilePath
   -> Source
 stackLocationToSource pl mCabalDir = case pl of
