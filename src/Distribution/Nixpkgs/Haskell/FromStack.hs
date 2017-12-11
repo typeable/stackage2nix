@@ -26,8 +26,9 @@ data PackageSetConfig = PackageSetConfig
   , targetCompiler  :: CompilerInfo }
 
 data PackageConfig = PackageConfig
-  { enableCheck   :: Bool
-  , enableHaddock :: Bool }
+  { enableCheck     :: Bool
+  , enableHaddock   :: Bool
+  , enableBenchmark :: Bool }
 
 removeTests :: GenericPackageDescription -> GenericPackageDescription
 removeTests gd = gd { condTestSuites = [] }
@@ -92,5 +93,4 @@ finalizePackage pkg pconf drv = drv
   & src .~ pkgSource pkg
   & doCheck &&~ enableCheck pconf
   & runHaddock &&~ enableHaddock pconf
-  -- Will never run benchmarks
-  & benchmarkDepends .~ mempty
+  & benchmarkDepends %~ if enableBenchmark pconf then id else const mempty

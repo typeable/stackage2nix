@@ -55,8 +55,9 @@ run = do
           else packageLoader packageSetConfig mHash pkgId
         s2nPackageSetConfig = packageSetConfig { packageLoader = s2nLoader }
         s2nPackageConfig = PackageConfig
-          { enableCheck   = opts ^. optDoCheckStackage
-          , enableHaddock = opts ^. optDoHaddockStackage }
+          { enableCheck     = opts ^. optDoCheckStackage
+          , enableHaddock   = opts ^. optDoHaddockStackage
+          , enableBenchmark = False }
       stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
         $ Map.toList (bpPackages buildPlan)
 
@@ -87,8 +88,9 @@ run = do
       let
         buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) stackResolver
         packageConfig = PackageConfig
-          { enableCheck   = opts ^. optDoCheckStackage
-          , enableHaddock = opts ^. optDoHaddockStackage }
+          { enableCheck     = opts ^. optDoCheckStackage
+          , enableHaddock   = opts ^. optDoHaddockStackage
+          , enableBenchmark = False }
       buildPlan <- LH.loadBuildPlan buildPlanFile
       packageSetConfig <- LH.buildPackageSetConfig
         (opts ^. optHackageDb)

@@ -23,6 +23,7 @@ import qualified Data.Set as Set
 data Node = Node
   { _nodeDerivation   :: Derivation
   , _nodeTestDepends  :: Set.Set String
+  , _nodeBenchmarkDepends :: Set.Set String
   , _nodeOtherDepends :: Set.Set String }
 
 makeLenses ''Node
@@ -34,17 +35,21 @@ mkNode _nodeDerivation = Node{..}
       . Set.filter isFromHackage
       $ view (s . (haskell <> tool)) _nodeDerivation
     _nodeTestDepends = haskellDependencies testDepends
+    _nodeBenchmarkDepends = haskellDependencies benchmarkDepends
     _nodeOtherDepends = haskellDependencies (executableDepends <> libraryDepends)
 
 nodeName :: Node -> String
 nodeName = unPackageName . packageName . view (nodeDerivation . pkgid)
 
+nodeCycleDepends :: Node -> Set.Set String
+nodeCycleDepends = _nodeTestDepends <> _nodeOtherDepends
+
 nodeDepends :: Node -> Set.Set String
-nodeDepends = _nodeTestDepends <> _nodeOtherDepends
+nodeDepends = _nodeTestDepends <> _nodeOtherDepends <> _nodeBenchmarkDepends
 
 findCycles :: [Node] -> [[Node]]
 findCycles nodes = mapMaybe cyclic $
-  Graph.stronglyConnComp [(node, nodeName node, Set.toList $ nodeDepends node) | node <- nodes]
+  Graph.stronglyConnComp [(node, nodeName node, Set.toList $ nodeCycleDepends node) | node <- nodes]
  where
   cyclic (Graph.AcyclicSCC _) = Nothing
   cyclic (Graph.CyclicSCC c)  = Just c
