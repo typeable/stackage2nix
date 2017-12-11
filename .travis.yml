@@ -18,7 +18,7 @@ jobs:
     - stage: test
       script:
       - stack --no-terminal --install-ghc build --fast --only-dependencies
-      - stack --no-terminal --install-ghc test --fast --pedantic
+      - stack --no-terminal --install-ghc build --test --haddock --no-haddock-deps --fast --pedantic
       - stack --no-terminal install
     - stage: bootstrap
       script:
