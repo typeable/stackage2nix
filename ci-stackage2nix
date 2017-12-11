@@ -3,22 +3,23 @@
 set -e
 
 STACKAGE2NIX_WORK_DIR=${STACKAGE2NIX_WORK_DIR:-$HOME}
-LTS_HASKELL_DIR=${LTS_HASKELL_DIR:-$STACKAGE2NIX_WORK_DIR/lts-haskell}
+STACKAGE_REPO=${STACKAGE_REPO:-$STACKAGE2NIX_WORK_DIR/lts-haskell}
 ALL_CABAL_HASHES_DIR=${ALL_CABAL_HASHES_DIR:-$STACKAGE2NIX_WORK_DIR/all-cabal-hashes}
+STACK_FILE=${STACK_FILE:-.}
 
-if [ ! -d "$LTS_HASKELL_DIR" ]; then
-  git clone --depth 1 https://github.com/fpco/lts-haskell.git "$LTS_HASKELL_DIR"
+if [ ! -d "$STACKAGE_REPO" ]; then
+  git clone --depth 1 https://github.com/fpco/lts-haskell.git "$STACKAGE_REPO"
 fi
 
 if [ ! -d "$ALL_CABAL_HASHES_DIR" ]; then
-  git clone --depth 1 --branch hackage https://github.com/commercialhaskell/all-cabal-hashes.git "$ALL_CABAL_HASHES_DIR"
+  git clone --branch hackage https://github.com/commercialhaskell/all-cabal-hashes.git "$ALL_CABAL_HASHES_DIR"
 fi
 
 set -x
 stack exec -- stackage2nix \
-  --lts-haskell "$LTS_HASKELL_DIR" \
+  --lts-haskell "$STACKAGE_REPO" \
   --all-cabal-hashes "$ALL_CABAL_HASHES_DIR" \
   --hackage-db "$HOME/.cabal/packages/hackage.haskell.org/01-index.tar" \
-  .
+  "$STACK_FILE"
 
-nix-build -A stackage2nix "$@"
+nix-build -o "result-$(basename $STACK_FILE)" -A stackage2nix "$@"

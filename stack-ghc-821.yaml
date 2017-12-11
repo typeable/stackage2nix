@@ -1,0 +1,4 @@
+resolver: nightly-2017-11-24
+extra-deps:
+  - cabal2nix-2.5
+  - hackage-db-1.22
