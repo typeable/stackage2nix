@@ -11,16 +11,24 @@ cache:
   directories:
   - $HOME/.local/bin
   - $HOME/.stack
-  - $HOME/.nix
+
+env:
+  - STACK_YAML=stack-ghc-802.yaml
+  - STACK_YAML=stack-ghc-821.yaml
+  - STACK_YAML=stack-ghc-822.yaml
 
 jobs:
   include:
-    - stage: test
-      script:
-      - stack --no-terminal --install-ghc build --fast --only-dependencies
-      - stack --no-terminal --install-ghc build --test --haddock --no-haddock-deps --fast --pedantic
-      - stack --no-terminal install
     - stage: bootstrap
+      env: STACK_YAML=stack-ghc-802.yaml
+      install:
+      # Install Nix
+      - mkdir -p ~/.nix
+      - sudo mkdir -p /nix
+      - sudo chmod a+w /nix
+      - sudo mount --bind ~/.nix /nix
+      - curl https://nixos.org/nix/install | sh
+      - source ~/.nix-profile/etc/profile.d/nix.sh
       script:
       - nix-env -i cabal-install
       - cabal update
@@ -31,10 +39,9 @@ before_install:
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-# Install Nix
-- mkdir -p ~/.nix
-- sudo mkdir -p /nix
-- sudo chmod a+w /nix
-- sudo mount --bind ~/.nix /nix
-- curl https://nixos.org/nix/install | sh
-- source ~/.nix-profile/etc/profile.d/nix.sh
+
+script:
+- stack --no-terminal --install-ghc build --fast --only-dependencies
+- stack --no-terminal --install-ghc build --test --haddock --no-haddock-deps --fast --pedantic
+- stack --no-terminal install
+
