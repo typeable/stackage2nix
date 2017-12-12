@@ -44,7 +44,7 @@ library
                      , gitlib > 3
                      , gitlib-libgit2 > 3
                      , hopenssl > 2.2
-                     , inflections
+                     , inflections >= 0.3
                      , language-nix
                      , lens
                      , network-uri

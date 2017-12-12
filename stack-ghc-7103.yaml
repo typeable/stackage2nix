@@ -1,5 +1,6 @@
 resolver: lts-6.35
 extra-deps:
+  - aeson-1.2.3.0
   - amazonka-1.4.5
   - amazonka-core-1.4.5
   - amazonka-s3-1.4.5
@@ -14,9 +15,12 @@ extra-deps:
   - http-client-0.5.7.1
   - http-client-tls-0.3.5.1
   - http-conduit-2.2.3.2
+  - inflections-0.3.0.0
+  - megaparsec-5.3.1
   - mono-traversable-1.0.4.0
   - mono-traversable-instances-0.1.0.0
   - stackage-curator-0.15.1.0
   - store-0.4.3.2
   - store-core-0.4.1
+  - th-abstraction-0.2.6.0
   - th-utilities-0.2.0.1
