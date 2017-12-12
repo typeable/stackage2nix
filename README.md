@@ -16,7 +16,34 @@ nix-env -i -f ./nix/stackage2nix
 It provides pre-configured wrapper around the raw executable with runtime
 `PATH` and all auxiliary flags set up.
 
-## Executable
+## Build project
+
+Generate derivations from `stack.yaml` config using Nix wrapper:
+
+``` bash
+stackage2nix ./stack.yaml
+```
+
+if you're using the raw executable, you should supply additional flags. See
+section 'Flags' below for details.
+
+This command will result in a Haskell packages set, similar to
+`pkgs.haskell.packages.<compiler>`, containing only packages that are required
+to build targets listed in `stackage.yaml`. To build a package run:
+
+``` bash
+nix-build -A my-package
+```
+
+## Build stackage
+
+Generate complete Stackage packages set from resolver:
+
+``` bash
+stackage2nix --resolver lts-9.0
+```
+
+## Flags
 
 ```
 stackage2nix \
@@ -77,7 +104,7 @@ For more complex overrides and detailed information on how to work with Haskell 
 
 ## Tests
 
-Integration tests that check generation of stackage packages versus different stack configs:
+Integration tests that build stackage2nix form different stack configs:
 
 ```
 STACKAGE_REPO=<path/to/stackage/repo> \
@@ -85,8 +112,3 @@ ALL_CABAL_HASHES=<path/to/all-cabal-hashes/repo> \
 STACK_FILE=stack-ghc-7103.yaml \
 ./ci-stackage2nix
 ```
-
-## Examples
-
-For other examples of `stackage2nix` usage, see [4e6/stackage2nix-examples](https://github.com/4e6/stackage2nix-examples) repository.
-It verifies `stackage2nix` by running it on different public projects.
