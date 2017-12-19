@@ -97,8 +97,7 @@ packageDerivation conf optHackageDb stackPackage = do
     isExtraDep = stackPackage ^. spExtraDep
     pconf = PackageConfig
       { enableCheck = if isExtraDep then conf ^. spcDoCheckStackage else conf ^. spcDoCheckPackages
-      , enableHaddock = if isExtraDep then conf ^. spcDoHaddockStackage else conf ^. spcDoHaddockPackages
-      , enableBenchmark = not isExtraDep }
+      , enableHaddock = if isExtraDep then conf ^. spcDoHaddockStackage else conf ^. spcDoHaddockPackages }
   return $ finalizePackage pkg pconf drv
 
 genericPackageDerivation

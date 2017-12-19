@@ -1,3 +1,4 @@
 .stack-work
 Paths_stackage2nix.hs
 /*.nix
+/result*

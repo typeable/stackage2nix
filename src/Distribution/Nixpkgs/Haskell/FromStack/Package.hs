@@ -22,10 +22,12 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 data Node = Node
-  { _nodeDerivation   :: Derivation
-  , _nodeTestDepends  :: Set.Set String
-  , _nodeBenchmarkDepends :: Set.Set String
-  , _nodeOtherDepends :: Set.Set String }
+  { _nodeDerivation        :: Derivation
+  , _nodeTestDepends       :: Set.Set String
+  , _nodeBenchmarkDepends  :: Set.Set String
+  , _nodeExecutableDepends :: Set.Set String
+  , _nodeSetupDepends      :: Set.Set String
+  , _nodeOtherDepends      :: Set.Set String }
 
 makeLenses ''Node
 
@@ -43,6 +45,8 @@ mkNode _nodeDerivation = Node{..}
       $ view (s . (haskell <> tool)) _nodeDerivation
     _nodeTestDepends = haskellDependencies testDepends
     _nodeBenchmarkDepends = haskellDependencies benchmarkDepends
+    _nodeExecutableDepends = haskellDependencies executableDepends
+    _nodeSetupDepends = haskellDependencies setupDepends
     _nodeOtherDepends = haskellDependencies (executableDepends <> libraryDepends)
 
 nodeName :: Node -> String
@@ -52,7 +56,11 @@ nodeCycleDepends :: Node -> Set.Set String
 nodeCycleDepends = _nodeTestDepends <> _nodeOtherDepends
 
 nodeDepends :: Node -> Set.Set String
-nodeDepends = _nodeTestDepends <> _nodeOtherDepends <> _nodeBenchmarkDepends
+nodeDepends = _nodeTestDepends
+  <> _nodeOtherDepends
+  <> _nodeBenchmarkDepends
+  <> _nodeExecutableDepends
+  <> _nodeSetupDepends
 
 findCycles :: [Node] -> [[Node]]
 findCycles nodes = mapMaybe cyclic $
