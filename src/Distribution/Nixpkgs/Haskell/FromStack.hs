@@ -27,8 +27,7 @@ data PackageSetConfig = PackageSetConfig
 
 data PackageConfig = PackageConfig
   { enableCheck     :: Bool
-  , enableHaddock   :: Bool
-  , enableBenchmark :: Bool }
+  , enableHaddock   :: Bool }
 
 removeTests :: GenericPackageDescription -> GenericPackageDescription
 removeTests gd = gd { condTestSuites = [] }
@@ -93,4 +92,3 @@ finalizePackage pkg pconf drv = drv
   & src .~ pkgSource pkg
   & doCheck &&~ enableCheck pconf
   & runHaddock &&~ enableHaddock pconf
-  & benchmarkDepends %~ if enableBenchmark pconf then id else const mempty

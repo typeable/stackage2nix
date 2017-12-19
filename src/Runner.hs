@@ -56,12 +56,15 @@ run = do
         s2nPackageSetConfig = packageSetConfig { packageLoader = s2nLoader }
         s2nPackageConfig = PackageConfig
           { enableCheck     = opts ^. optDoCheckStackage
-          , enableHaddock   = opts ^. optDoHaddockStackage
-          , enableBenchmark = False }
+          , enableHaddock   = opts ^. optDoHaddockStackage }
       stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
         $ Map.toAscList (bpPackages buildPlan)
 
       let
+        -- Nixpkgs generic-builder puts hscolour on path for all libraries
+        withHscolour pkgs =
+          let hscolour = F.find ((== "hscolour") . nodeName) stackagePackages
+          in maybe pkgs (`Set.insert` pkgs) hscolour
         -- Find all reachable dependencies in stackage set to stick into
         -- stackage packages file. This is performed on the full stackage
         -- set rather than pruning stackage packages beforehand because
@@ -71,6 +74,7 @@ run = do
         -- listed as well.
         nodes = case opts ^. optOutPackagesClosure of
           True -> Set.toAscList
+            $ withHscolour
             $ flip reachableDependencies stackagePackages
             -- Originally reachable nodes are root nodes
             $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
@@ -88,8 +92,7 @@ run = do
         buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) stackResolver
         packageConfig = PackageConfig
           { enableCheck     = opts ^. optDoCheckStackage
-          , enableHaddock   = opts ^. optDoHaddockStackage
-          , enableBenchmark = False }
+          , enableHaddock   = opts ^. optDoHaddockStackage }
       buildPlan <- LH.loadBuildPlan buildPlanFile
       packageSetConfig <- LH.buildPackageSetConfig
         (opts ^. optHackageDb)
