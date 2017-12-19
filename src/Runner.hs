@@ -91,8 +91,8 @@ run = do
       let
         buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) stackResolver
         packageConfig = PackageConfig
-          { enableCheck     = opts ^. optDoCheckStackage
-          , enableHaddock   = opts ^. optDoHaddockStackage }
+          { enableCheck     = True
+          , enableHaddock   = True }
       buildPlan <- LH.loadBuildPlan buildPlanFile
       packageSetConfig <- LH.buildPackageSetConfig
         (opts ^. optHackageDb)
