@@ -106,9 +106,9 @@ isFromHackage b = case view (reference . Nix.path) b of
 
 pPrintOutConfig :: SystemInfo -> [Node] -> Doc
 pPrintOutConfig systemInfo nodes = vcat
-  [ "{ pkgs }:"
+  [ "{ pkgs, haskellLib }:"
   , ""
-  , "with pkgs.haskell.lib; self: super: {"
+  , "with haskellLib; self: super: {"
   , ""
   , "  # core packages"
   , nest 2 $ vcat $
