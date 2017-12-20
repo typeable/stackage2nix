@@ -42,15 +42,11 @@ overridePackages = PP.packageSetConfig . PP.cat . F.toList . fmap callPackage
 
 importStackagePackages :: FilePath -> Doc
 importStackagePackages path = hsep
-  [ funarg "self",  "import", disp (fromString path :: Nix.FilePath), "{"
-  , "inherit pkgs stdenv;"
-  , "inherit (self) callPackage;"
-  , "}"
-  ]
+  ["import", disp (fromString path :: Nix.FilePath)]
 
-callStackageConfig :: FilePath -> Doc
-callStackageConfig path = hsep
-  [ "callPackage", disp (fromString path :: Nix.FilePath), "{}"]
+importStackageConfig :: FilePath -> Doc
+importStackageConfig path = hsep
+  ["import ", disp (fromString path :: Nix.FilePath), "{ inherit pkgs haskellLib; }"]
 
 overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
 overrideHaskellPackages oc packages =
@@ -67,8 +63,9 @@ overrideHaskellPackages oc packages =
   , "let"
   , nest 2 "inherit (stdenv.lib) extends;"
   , nest 2 $ vcat
-    [ attr "stackagePackages" . importStackagePackages $ oc ^. ocStackagePackages
-    , attr "stackageConfig" . callStackageConfig $ oc ^. ocStackageConfig ]
+    [ attr "haskellLib" "callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules/lib.nix\") {}"
+    , attr "stackagePackages" . importStackagePackages $ oc ^. ocStackagePackages
+    , attr "stackageConfig" . importStackageConfig $ oc ^. ocStackageConfig ]
   , nest 2 $ vcat
     [ "stackPackages ="
     , nest 2 $ overridePackages packages <> semi
@@ -82,10 +79,10 @@ overrideHaskellPackages oc packages =
   , "in callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules\") {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
-    , attr "compilerConfig" "self: extends pkgOverrides (extends stackageConfig (stackagePackages self))"
-    , attr "haskellLib" "callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules/lib.nix\") {}"
-    , attr "initialPackages" "args: self: {}"
+    , attr "compilerConfig" "self: extends pkgOverrides (stackageConfig self)"
+    , attr "initialPackages" "stackagePackages"
     , attr "configurationCommon" "args: self: super: {}"
+    , "inherit haskellLib;"
     ]
   , "}"
   ]
@@ -101,20 +98,17 @@ pPrintHaskellPackages oc =
     [ "nixpkgs ? import " <> nixpkgs <> " {}"
     ]
   , ""
-  , "with nixpkgs;"
-  , "let"
-  , nest 2 "inherit (stdenv.lib) extends;"
+  , "with nixpkgs; let"
   , nest 2 $ vcat
-    [ attr "stackagePackages" . importStackagePackages $ oc ^. ocStackagePackages
-    , attr "stackageConfig" . callStackageConfig $ oc ^. ocStackageConfig
+    [ attr "haskellLib" "callPackage (nixpkgs.path + /pkgs/development/haskell-modules/lib.nix) {}"
     ]
   , "in callPackage (nixpkgs.path + /pkgs/development/haskell-modules) {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
-    , attr "compilerConfig" "self: extends stackageConfig (stackagePackages self)"
-    , attr "haskellLib" "callPackage (nixpkgs.path + /pkgs/development/haskell-modules/lib.nix) {}"
-    , attr "initialPackages" "args: self: {}"
-    , attr "configurationCommon" "args: self: super: {}"
+    , attr "compilerConfig" . importStackageConfig $ oc ^. ocStackageConfig
+    , attr "initialPackages" . importStackagePackages $ oc ^. ocStackagePackages
+    , attr "configurationCommon" "if builtins.pathExists ./configuration-common.nix then import ./configuration-common.nix else args: self: super: {}"
+    , "inherit haskellLib;"
     ]
   , "}"
   ]
