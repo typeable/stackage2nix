@@ -32,6 +32,9 @@ data PackageConfig = PackageConfig
 removeTests :: GenericPackageDescription -> GenericPackageDescription
 removeTests gd = gd { condTestSuites = [] }
 
+removeBenches :: GenericPackageDescription -> GenericPackageDescription
+removeBenches gd = gd { condBenchmarks = [] }
+
 planDependencies :: PackagePlan -> [Dependency]
 planDependencies = map makeDependency . Map.toList . sdPackages . ppDesc
  where
@@ -57,6 +60,9 @@ fromPackage conf pconf plan pkg =
     configureTests
       | pcTests constraints == Don'tBuild = removeTests
       | otherwise = id
+    configureBenches
+      | pcBenches constraints == Don'tBuild = removeBenches
+      | otherwise = id
     flags = Map.toList (pcFlagOverrides constraints)
     (descr, missingDeps) = finalizeGenericPackageDescription
       (haskellResolver conf)
@@ -64,7 +70,7 @@ fromPackage conf pconf plan pkg =
       (targetCompiler conf)
       flags
       (planDependencies plan)
-      (configureTests (pkgCabal pkg))
+      (configureBenches . configureTests $ pkgCabal pkg)
     genericDrv = fromPackageDescription
       (haskellResolver conf)
       (nixpkgsResolver conf)
