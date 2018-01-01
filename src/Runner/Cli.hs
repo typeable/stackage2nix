@@ -34,9 +34,7 @@ data Options = Options
   , _optOutDerivation       :: FilePath
   , _optDoCheckPackages     :: Bool
   , _optDoHaddockPackages   :: Bool
-  , _optDoCheckStackage     :: Bool
-  , _optDoHaddockStackage   :: Bool
-  , _optHackageDb           :: (Maybe HackageDb)
+  , _optHackageDb           :: Maybe HackageDb
   , _optNixpkgsRepository   :: FilePath
   , _optCompilerId          :: CompilerId
   , _optPlatform            :: Platform
@@ -65,8 +63,6 @@ options = Options
   <*> outDerivation
   <*> doCheckPackages
   <*> doHaddockPackages
-  <*> doCheckStackage
-  <*> doHaddockStackage
   <*> optional hackageDb
   <*> nixpkgsRepository
   <*> compilerId
@@ -139,16 +135,6 @@ doHaddockPackages :: Parser Bool
 doHaddockPackages = flag True False
   ( long "no-haddock"
     <> help "disable haddock for project packages")
-
-doCheckStackage :: Parser Bool
-doCheckStackage = switch
-  ( long "do-check-stackage"
-    <> help "enable tests for Stackage packages" )
-
-doHaddockStackage :: Parser Bool
-doHaddockStackage = switch
-  ( long "do-haddock-stackage"
-    <> help "enable haddock for Stackage packages" )
 
 resolver :: Parser StackResolver
 resolver = StackResolver <$> option text

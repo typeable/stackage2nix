@@ -25,15 +25,13 @@ unHackageDb :: HackageDb -> String
 unHackageDb = T.unpack . fromHackageDB
 
 data StackPackagesConfig = StackPackagesConfig
-  { _spcHaskellResolver   :: !HaskellResolver
-  , _spcNixpkgsResolver   :: !NixpkgsResolver
-  , _spcTargetPlatform    :: !Platform
-  , _spcTargetCompiler    :: !CompilerInfo
-  , _spcFlagAssignment    :: !FlagAssignment
-  , _spcDoCheckPackages   :: !Bool
-  , _spcDoHaddockPackages :: !Bool
-  , _spcDoCheckStackage   :: !Bool
-  , _spcDoHaddockStackage :: !Bool
+  { _spcHaskellResolver   :: HaskellResolver
+  , _spcNixpkgsResolver   :: NixpkgsResolver
+  , _spcTargetPlatform    :: Platform
+  , _spcTargetCompiler    :: CompilerInfo
+  , _spcFlagAssignment    :: FlagAssignment
+  , _spcDoCheckPackages   :: Bool
+  , _spcDoHaddockPackages :: Bool
   }
 
 makeLenses ''StackPackagesConfig
@@ -96,8 +94,8 @@ packageDerivation conf optHackageDb stackPackage = do
       & subpath %~ flip fromMaybe (stackPackage ^. spDir)
     isExtraDep = stackPackage ^. spExtraDep
     pconf = PackageConfig
-      { enableCheck = if isExtraDep then conf ^. spcDoCheckStackage else conf ^. spcDoCheckPackages
-      , enableHaddock = if isExtraDep then conf ^. spcDoHaddockStackage else conf ^. spcDoHaddockPackages }
+      { enableCheck   = isExtraDep || conf ^. spcDoCheckPackages
+      , enableHaddock = isExtraDep || conf ^. spcDoHaddockPackages }
   return $ finalizePackage pkg pconf drv
 
 genericPackageDerivation
