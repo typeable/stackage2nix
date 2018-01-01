@@ -30,10 +30,11 @@ data Options = Options
   , _optLtsHaskellRepo      :: FilePath
   , _optOutStackagePackages :: FilePath
   , _optOutStackageConfig   :: FilePath
-  , _optOutPackagesClosure  :: Bool
   , _optOutDerivation       :: FilePath
   , _optDoCheckPackages     :: Bool
   , _optDoHaddockPackages   :: Bool
+  , _optWithStackage        :: Bool
+  , _optWithStackageClosure :: Bool
   , _optHackageDb           :: Maybe HackageDb
   , _optNixpkgsRepository   :: FilePath
   , _optCompilerId          :: CompilerId
@@ -59,10 +60,11 @@ options = Options
   <*> ltsHaskellRepo
   <*> outStackagePackages
   <*> outStackageConfig
-  <*> outPackagesClosure
   <*> outDerivation
   <*> doCheckPackages
   <*> doHaddockPackages
+  <*> withStackage
+  <*> withStackageClosure
   <*> optional hackageDb
   <*> nixpkgsRepository
   <*> compilerId
@@ -113,11 +115,6 @@ outStackageConfig = option str
     <> value "configuration-packages.nix"
     <> showDefaultWith id)
 
-outPackagesClosure :: Parser Bool
-outPackagesClosure = flag True False
-  ( long "no-packages-closure"
-    <> help "produce full set of stackage packages, not just dependencies" )
-
 outDerivation :: Parser FilePath
 outDerivation = option str
   ( long "out-derivation"
@@ -135,6 +132,16 @@ doHaddockPackages :: Parser Bool
 doHaddockPackages = flag True False
   ( long "no-haddock"
     <> help "disable haddock for project packages")
+
+withStackage :: Parser Bool
+withStackage = switch
+  ( long "--with-stackage"
+    <> help "generate full Stackage" )
+
+withStackageClosure :: Parser Bool
+withStackageClosure = switch
+  ( long "--with-stackage-closure"
+    <> help "generate Stackage subset containing only build dependencies" )
 
 resolver :: Parser StackResolver
 resolver = StackResolver <$> option text
