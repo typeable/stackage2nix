@@ -1,6 +1,7 @@
 module Runner ( run ) where
 
 import Control.Lens
+import Control.Monad
 import Data.Foldable as F
 import Data.List as L
 import Distribution.Nixpkgs.Haskell.FromStack
@@ -60,6 +61,7 @@ run = do
       stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
         $ Map.toAscList (bpPackages buildPlan)
       let
+        generateStackage = opts ^. optWithStackage || opts ^. optWithStackageClosure
         -- Nixpkgs generic-builder puts hscolour on path for all libraries
         withHscolour pkgs =
           let hscolour = F.find ((== "hscolour") . nodeName) stackagePackages
@@ -71,17 +73,19 @@ run = do
         -- does: pruning only after generating full set of packages allows
         -- us to make sure all those extra dependencies are explicitly
         -- listed as well.
-        nodes = case opts ^. optOutPackagesClosure of
+        nodes = case opts ^. optWithStackageClosure of
           True -> Set.toAscList
             $ withHscolour
             $ flip reachableDependencies stackagePackages
             -- Originally reachable nodes are root nodes
             $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
           False -> stackagePackages
-      writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
-        $ pPrintOutPackages (view nodeDerivation <$> nodes)
-      writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
-        $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
+      when generateStackage $ do
+        writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
+          $ pPrintOutPackages (view nodeDerivation <$> nodes)
+        writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
+          $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
+      -- TODO: generate stackage override
       writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
         $ PP.overrideHaskellPackages overrideConfig stackConfPackages
 
