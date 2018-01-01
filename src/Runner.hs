@@ -59,7 +59,6 @@ run = do
           , enableHaddock   = opts ^. optDoHaddockStackage }
       stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
         $ Map.toAscList (bpPackages buildPlan)
-
       let
         -- Nixpkgs generic-builder puts hscolour on path for all libraries
         withHscolour pkgs =
