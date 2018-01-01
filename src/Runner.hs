@@ -55,8 +55,8 @@ run = do
           else packageLoader packageSetConfig mHash pkgId
         s2nPackageSetConfig = packageSetConfig { packageLoader = s2nLoader }
         s2nPackageConfig = PackageConfig
-          { enableCheck     = opts ^. optDoCheckStackage
-          , enableHaddock   = opts ^. optDoHaddockStackage }
+          { enableCheck     = True
+          , enableHaddock   = True }
       stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
         $ Map.toAscList (bpPackages buildPlan)
       let
@@ -130,6 +130,4 @@ mkStackPackagesConfig opts = StackPackagesConfig
   , _spcTargetCompiler    = unknownCompilerInfo (opts ^. optCompilerId) NoAbiTag
   , _spcFlagAssignment    = []
   , _spcDoCheckPackages   = opts ^. optDoCheckPackages
-  , _spcDoHaddockPackages = opts ^. optDoHaddockPackages
-  , _spcDoCheckStackage   = opts ^. optDoCheckStackage
-  , _spcDoHaddockStackage = opts ^. optDoHaddockStackage }
+  , _spcDoHaddockPackages = opts ^. optDoHaddockPackages }
