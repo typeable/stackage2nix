@@ -30,6 +30,11 @@ makeLenses ''OverrideConfig
 systemNixpkgs :: Doc
 systemNixpkgs = "<nixpkgs>"
 
+renderNixpkgs :: FilePath -> Doc
+renderNixpkgs nixpkgsPath
+  | fromString nixpkgsPath == systemNixpkgs = systemNixpkgs
+  | otherwise = disp $ (fromString nixpkgsPath :: Nix.FilePath)
+
 hasField :: Lens' a (Maybe b) -> a -> Bool
 hasField p = views p isJust
 
@@ -50,14 +55,9 @@ importStackageConfig path = hsep
   ["import ", disp (fromString path :: Nix.FilePath), "{ inherit pkgs haskellLib; }"]
 
 overrideHaskellPackages :: OverrideConfig -> NonEmpty Derivation -> Doc
-overrideHaskellPackages oc packages =
-  let
-    nixpkgs = if oc ^. ocNixpkgs . to fromString == systemNixpkgs
-      then systemNixpkgs
-      else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
-  in vcat
+overrideHaskellPackages oc packages = vcat
   [ funargs
-    [ "nixpkgs ? import " <> nixpkgs <> " {}"
+    [ "nixpkgs ? import " <> renderNixpkgs (oc ^. ocNixpkgs) <> " {}"
     ]
   , ""
   , "with nixpkgs;"
@@ -88,15 +88,10 @@ overrideHaskellPackages oc packages =
   , "}"
   ]
 
-overrideStackage :: StackResolver -> OverrideConfig -> NonEmpty Derivation -> Doc
-overrideStackage stackResolver oc packages =
-  let
-    nixpkgs = if oc ^. ocNixpkgs . to fromString == systemNixpkgs
-      then systemNixpkgs
-      else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
-  in vcat
+overrideStackage :: StackResolver -> FilePath -> NonEmpty Derivation -> Doc
+overrideStackage stackResolver nixpkgsPath packages = vcat
   [ funargs
-    [ "nixpkgs ? import " <> nixpkgs <> " {}"
+    [ "nixpkgs ? import " <> renderNixpkgs nixpkgsPath <> " {}"
     ]
   , ""
   , "let"
