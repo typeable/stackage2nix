@@ -1,7 +1,6 @@
 module Runner ( run ) where
 
 import Control.Lens
-import Control.Monad
 import Data.Foldable as F
 import Data.List as L
 import Distribution.Nixpkgs.Haskell.FromStack
@@ -34,62 +33,66 @@ run = do
     -- Generate build derivation from stack.yaml file
     OriginStackYaml stackYaml -> do
       stackConf <- either fail pure =<< readStackConfig stackYaml
-      let buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) (stackConf ^. scResolver)
-      buildPlan <- LH.loadBuildPlan buildPlanFile
-      packageSetConfig <- LH.buildPackageSetConfig
-        (opts ^. optHackageDb)
-        (opts ^. optAllCabalHashesRepo)
-        (opts ^. optNixpkgsRepository)
-        buildPlan
-      let
-        overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
-        stackPackagesConfig = mkStackPackagesConfig opts
-      stackConfPackages <- traverse (packageDerivation stackPackagesConfig (opts ^. optHackageDb))
-        $ stackConf ^. scPackages
-      let
-        reachable = Set.map mkPackageName
-          $ F.foldr1 Set.union
-          $ nodeDepends . mkNode <$> stackConfPackages
-        s2nLoader mHash pkgId =
-          if pkgName pkgId `Set.member` reachable
-          then packageLoader packageSetConfig Nothing pkgId
-          else packageLoader packageSetConfig mHash pkgId
-        s2nPackageSetConfig = packageSetConfig { packageLoader = s2nLoader }
-        s2nPackageConfig = PackageConfig
-          { enableCheck     = True
-          , enableHaddock   = True }
-      stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
-        $ Map.toAscList (bpPackages buildPlan)
       let
         generateStackage = opts ^. optWithStackage || opts ^. optWithStackageClosure
-        -- Nixpkgs generic-builder puts hscolour on path for all libraries
-        withHscolour pkgs =
-          let hscolour = F.find ((== "hscolour") . nodeName) stackagePackages
-          in maybe pkgs (`Set.insert` pkgs) hscolour
-        -- Find all reachable dependencies in stackage set to stick into
-        -- stackage packages file. This is performed on the full stackage
-        -- set rather than pruning stackage packages beforehand because
-        -- stackage does not concern itself with build tools while cabal2nix
-        -- does: pruning only after generating full set of packages allows
-        -- us to make sure all those extra dependencies are explicitly
-        -- listed as well.
-        nodes = case opts ^. optWithStackageClosure of
-          True -> Set.toAscList
-            $ withHscolour
-            $ flip reachableDependencies stackagePackages
-            -- Originally reachable nodes are root nodes
-            $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
-          False -> stackagePackages
-      when generateStackage $ do
-        writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
-          $ pPrintOutPackages (view nodeDerivation <$> nodes)
-        writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
-          $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
-      writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation) $
-        if generateStackage
-        then PP.overrideHaskellPackages overrideConfig stackConfPackages
-        -- TODO: --lts-haskell and --all-cabal-caches unnecessary
-        else PP.overrideStackage (stackConf ^. scResolver) overrideConfig stackConfPackages
+        stackPackagesConfig = mkStackPackagesConfig opts
+      stackConfPackages <- traverse (packageDerivation stackPackagesConfig (opts ^. optHackageDb)) $ stackConf ^. scPackages
+
+      case generateStackage of
+        -- Generate Stackage packages from stack.yaml resolver
+        True -> do
+          let buildPlanFile = LH.buildPlanFilePath (opts ^. optLtsHaskellRepo) (stackConf ^. scResolver)
+          buildPlan <- LH.loadBuildPlan buildPlanFile
+          packageSetConfig <- LH.buildPackageSetConfig
+            (opts ^. optHackageDb)
+            (opts ^. optAllCabalHashesRepo)
+            (opts ^. optNixpkgsRepository)
+            buildPlan
+          let
+            overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
+            reachable = Set.map mkPackageName
+              $ F.foldr1 Set.union
+              $ nodeDepends . mkNode <$> stackConfPackages
+            s2nLoader mHash pkgId =
+              if pkgName pkgId `Set.member` reachable
+              then packageLoader packageSetConfig Nothing pkgId
+              else packageLoader packageSetConfig mHash pkgId
+            s2nPackageSetConfig = packageSetConfig { packageLoader = s2nLoader }
+            s2nPackageConfig = PackageConfig
+              { enableCheck     = True
+              , enableHaddock   = True }
+          stackagePackages <- traverse (uncurry (buildNode s2nPackageSetConfig s2nPackageConfig))
+            $ Map.toAscList (bpPackages buildPlan)
+          let
+            -- Nixpkgs generic-builder puts hscolour on path for all libraries
+            withHscolour pkgs =
+              let hscolour = F.find ((== "hscolour") . nodeName) stackagePackages
+              in maybe pkgs (`Set.insert` pkgs) hscolour
+            -- Find all reachable dependencies in stackage set to stick into
+            -- stackage packages file. This is performed on the full stackage
+            -- set rather than pruning stackage packages beforehand because
+            -- stackage does not concern itself with build tools while cabal2nix
+            -- does: pruning only after generating full set of packages allows
+            -- us to make sure all those extra dependencies are explicitly
+            -- listed as well.
+            nodes = case opts ^. optWithStackageClosure of
+              True -> Set.toAscList
+                $ withHscolour
+                $ flip reachableDependencies stackagePackages
+                -- Originally reachable nodes are root nodes
+                $ L.filter (\n -> mkPackageName (nodeName n) `Set.member` reachable) stackagePackages
+              False -> stackagePackages
+          writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
+            $ pPrintOutPackages (view nodeDerivation <$> nodes)
+          writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
+            $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
+          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
+            $ PP.overrideHaskellPackages overrideConfig stackConfPackages
+
+        -- Generate Stackage override only
+        False ->
+          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
+            $ PP.overrideStackage (stackConf ^. scResolver) (opts ^. optNixpkgsRepository) stackConfPackages
 
     -- Generate Stackage packages from resolver
     OriginResolver stackResolver -> do
