@@ -15,6 +15,7 @@ import           Distribution.Text
 import           Distribution.Version (Version)
 import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
+import           Stack.Config (StackResolver, unStackResolver)
 
 
 data OverrideConfig = OverrideConfig
@@ -87,6 +88,28 @@ overrideHaskellPackages oc packages =
   , "}"
   ]
 
+overrideStackage :: StackResolver -> OverrideConfig -> NonEmpty Derivation -> Doc
+overrideStackage stackResolver oc packages =
+  let
+    nixpkgs = if oc ^. ocNixpkgs . to fromString == systemNixpkgs
+      then systemNixpkgs
+      else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
+  in vcat
+  [ funargs
+    [ "nixpkgs ? import " <> nixpkgs <> " {}"
+    ]
+  , ""
+  , "let"
+  , nest 2 $ vcat
+    [ "stackPackages ="
+    , nest 2 $ overridePackages packages <> semi
+    ]
+  , "in nixpkgs.haskell.packages.stackage." <> toNixStackResolver stackResolver <> ".override {"
+  , nest 2
+    $ attr "packageSetConfig" "self: super: stackPackages { inherit (nixpkgs) pkgs stdenv; inherit (self) callPackage; } super"
+  , "}"
+  ]
+
 pPrintHaskellPackages :: OverrideConfig -> Doc
 pPrintHaskellPackages oc =
   let
@@ -114,5 +137,10 @@ pPrintHaskellPackages oc =
   ]
 
 toNixGhcVersion :: Version -> Doc
-toNixGhcVersion =
-  (<>) "ghc" . text . L.filter (/= '.') . show . disp
+toNixGhcVersion = (<>) "ghc" . toNixVersion . show . disp
+
+toNixStackResolver :: StackResolver -> Doc
+toNixStackResolver = toNixVersion . unStackResolver
+
+toNixVersion :: String -> Doc
+toNixVersion = text . L.filter (/= '.')

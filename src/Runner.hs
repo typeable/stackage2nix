@@ -85,9 +85,11 @@ run = do
           $ pPrintOutPackages (view nodeDerivation <$> nodes)
         writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
           $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
-      -- TODO: generate stackage override
-      writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-        $ PP.overrideHaskellPackages overrideConfig stackConfPackages
+      writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation) $
+        if generateStackage
+        then PP.overrideHaskellPackages overrideConfig stackConfPackages
+        -- TODO: --lts-haskell and --all-cabal-caches unnecessary
+        else PP.overrideStackage (stackConf ^. scResolver) overrideConfig stackConfPackages
 
     -- Generate Stackage packages from resolver
     OriginResolver stackResolver -> do

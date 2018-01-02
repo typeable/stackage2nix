@@ -135,12 +135,12 @@ doHaddockPackages = flag True False
 
 withStackage :: Parser Bool
 withStackage = switch
-  ( long "--with-stackage"
+  ( long "with-stackage"
     <> help "generate full Stackage" )
 
 withStackageClosure :: Parser Bool
 withStackageClosure = switch
-  ( long "--with-stackage-closure"
+  ( long "with-stackage-closure"
     <> help "generate Stackage subset containing only build dependencies" )
 
 resolver :: Parser StackResolver
