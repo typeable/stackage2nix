@@ -15,26 +15,40 @@ import           Stack.Types
 import           System.Environment
 import           System.FilePath
 
+-- | What will be generated
+data Target
+  = TargetStackagePackages
+  | TargetStackageClosure
+  | TargetStackageOverride
+  deriving (Show)
+
+makePrisms ''Target
+
 -- | Source that would be used to produce target derivation
 data ConfigOrigin
   = OriginResolver StackResolver
   -- ^ Resolver to generate Stackage LTS
-  | OriginStackYaml StackYaml
+  | OriginStackYaml StackYaml Target
   -- ^ Stack config to generate build derivation
   deriving (Show)
 
 makePrisms ''ConfigOrigin
 
+data StackageOptions = StackageOptions
+  { _soptAllCabalHashesRepo :: FilePath
+  , _soptLtsHaskellRepo     :: FilePath
+  } deriving (Show)
+
+makeLenses ''StackageOptions
+
 data Options = Options
-  { _optAllCabalHashesRepo  :: FilePath
-  , _optLtsHaskellRepo      :: FilePath
+  { _optAllCabalHashesRepo  :: Maybe FilePath
+  , _optLtsHaskellRepo      :: Maybe FilePath
   , _optOutStackagePackages :: FilePath
   , _optOutStackageConfig   :: FilePath
   , _optOutDerivation       :: FilePath
   , _optDoCheckPackages     :: Bool
   , _optDoHaddockPackages   :: Bool
-  , _optWithStackage        :: Bool
-  , _optWithStackageClosure :: Bool
   , _optHackageDb           :: Maybe HackageDb
   , _optNixpkgsRepository   :: FilePath
   , _optCompilerId          :: CompilerId
@@ -56,15 +70,13 @@ mkStackYaml p = case splitFileName p of
 
 options :: Parser Options
 options = Options
-  <$> allCabalHashesRepo
-  <*> ltsHaskellRepo
+  <$> optional allCabalHashesRepo
+  <*> optional ltsHaskellRepo
   <*> outStackagePackages
   <*> outStackageConfig
   <*> outDerivation
   <*> doCheckPackages
   <*> doHaddockPackages
-  <*> withStackage
-  <*> withStackageClosure
   <*> optional hackageDb
   <*> nixpkgsRepository
   <*> compilerId
@@ -133,13 +145,13 @@ doHaddockPackages = flag True False
   ( long "no-haddock"
     <> help "disable haddock for project packages")
 
-withStackage :: Parser Bool
-withStackage = switch
+withStackage :: Parser ()
+withStackage = flag' ()
   ( long "with-stackage"
     <> help "generate full Stackage" )
 
-withStackageClosure :: Parser Bool
-withStackageClosure = switch
+withStackageClosure :: Parser ()
+withStackageClosure = flag' ()
   ( long "with-stackage-closure"
     <> help "generate Stackage subset containing only build dependencies" )
 
@@ -153,11 +165,18 @@ stackYamlArg = mkStackYaml <$> Opts.argument str
   ( metavar "STACK_YAML"
     <> help "path to stack.yaml file or directory" )
 
-configOrigin :: Parser ConfigOrigin
-configOrigin = OriginResolver <$> resolver
-  <|> OriginStackYaml <$> stackYamlArg
+target :: Parser Target
+target =
+  withStackage *> pure TargetStackagePackages <|>
+  withStackageClosure *> pure TargetStackageClosure <|>
+  pure TargetStackageOverride
 
--- inherited from cabal2nix
+configOrigin :: Parser ConfigOrigin
+configOrigin =
+  OriginStackYaml <$> stackYamlArg <*> target <|>
+  OriginResolver <$> resolver
+
+-- required for cabal2nix
 
 hackageDb :: Parser HackageDb
 hackageDb = HackageDb <$>
