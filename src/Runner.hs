@@ -11,7 +11,7 @@ import Distribution.Nixpkgs.Haskell.Stack
 import Distribution.Nixpkgs.Haskell.Stack.PrettyPrinting as PP
 import Distribution.Version (Version)
 import Distribution.Compiler (AbiTag(..), unknownCompilerInfo)
-import Distribution.Package (mkPackageName, pkgName)
+import Distribution.Package (PackageName, mkPackageName, pkgName)
 import Distribution.Text as Text (display)
 import Language.Nix as Nix
 import Options.Applicative
@@ -32,7 +32,7 @@ run = do
   opts <- execParser pinfo
   let
     -- With optparse-applicative it seems there's no way to make
-    -- 'StackageOptions' optional for stackage override and required in
+    -- 'StackageOptions' optional for Stackage override and required in
     -- other cases
     missingErr = error . ("Missing required parameter: " <>)
     sopts = StackageOptions
@@ -46,25 +46,20 @@ run = do
       let
         stackResolver = stackConf ^. scResolver
         stackPackagesConfig = mkStackPackagesConfig opts
-      stackConfPackages <- traverse (packageDerivation stackPackagesConfig (opts ^. optHackageDb))
+      stackConfPackages <- traverse (fmap mkNode . packageDerivation stackPackagesConfig (opts ^. optHackageDb))
         $ stackConf ^. scPackages
-      let
-        reachable = Set.map mkPackageName
-          $ F.foldr1 Set.union
-          $ nodeDepends . mkNode <$> stackConfPackages
 
       case buildTarget of
         TargetStackageClosure -> do
           (buildPlanFile, buildPlan, packageSetConfig) <- loadStackageBuildPlan stackResolver opts sopts
           let
             overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
-            stackageLoader mHash pkgId =
-              if pkgName pkgId `Set.member` reachable
-              then packageLoader packageSetConfig Nothing pkgId
-              else packageLoader packageSetConfig mHash pkgId
-            stackageSetConfig = packageSetConfig { packageLoader = stackageLoader }
+            stackageSetConfig = if opts ^. optTweaks . tExtraDepsRevisionLatest
+              then extraDepsLatestConfig stackConfPackages packageSetConfig
+              else packageSetConfig
           stackagePackages <- buildStackagePackages stackageSetConfig buildPlan
           let
+            reachable = reachableDeps stackConfPackages
             -- Nixpkgs generic-builder puts hscolour on path for all libraries
             withHscolour pkgs =
               let hscolour = F.find ((== "hscolour") . nodeName) stackagePackages
@@ -86,28 +81,34 @@ run = do
           writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
             $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
           writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-            $ PP.overrideHaskellPackages overrideConfig stackConfPackages
+            $ PP.overrideHaskellPackages overrideConfig (view nodeDerivation <$> stackConfPackages)
 
         TargetStackagePackages -> do
           (buildPlanFile, buildPlan, packageSetConfig) <- loadStackageBuildPlan stackResolver opts sopts
           let
             overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
-            stackageLoader mHash pkgId =
-              if pkgName pkgId `Set.member` reachable
-              then packageLoader packageSetConfig Nothing pkgId
-              else packageLoader packageSetConfig mHash pkgId
-            stackageSetConfig = packageSetConfig { packageLoader = stackageLoader }
+            stackageSetConfig = if opts ^. optTweaks . tExtraDepsRevisionLatest
+              then extraDepsLatestConfig stackConfPackages packageSetConfig
+              else packageSetConfig
+            -- stackageLoader mHash pkgId =
+            --   if pkgName pkgId `Set.member` reachable
+            --   then packageLoader packageSetConfig Nothing pkgId
+            --   else packageLoader packageSetConfig mHash pkgId
+            -- stackageSetConfig = packageSetConfig { packageLoader = stackageLoader }
           nodes <- buildStackagePackages stackageSetConfig buildPlan
           writeOutFile buildPlanFile (opts ^. optOutStackagePackages)
             $ pPrintOutPackages (view nodeDerivation <$> nodes)
           writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
             $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
           writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-            $ PP.overrideHaskellPackages overrideConfig stackConfPackages
+            $ PP.overrideHaskellPackages overrideConfig (view nodeDerivation <$> stackConfPackages)
 
         TargetStackageOverride ->
-          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-            $ PP.overrideStackage (stackConf ^. scResolver) (opts ^. optNixpkgsRepository) stackConfPackages
+          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation) $
+          PP.overrideStackage
+          (stackConf ^. scResolver)
+          (opts ^. optNixpkgsRepository)
+          (view nodeDerivation <$> stackConfPackages)
 
     -- Generate Stackage packages from resolver
     OriginResolver stackResolver -> do
@@ -140,6 +141,23 @@ buildStackagePackages packageSetConfig buildPlan = do
       , enableHaddock   = True }
   traverse (uncurry (buildNode packageSetConfig stackagePackageConfig))
   $ Map.toAscList (bpPackages buildPlan)
+
+reachableDeps :: Traversable t => t Node -> Set.Set PackageName
+reachableDeps = Set.map mkPackageName
+  . F.foldr1 Set.union
+  . fmap nodeDepends
+
+-- Return 'PackageSetConfig' with package loader that loads latest Hackage
+-- revison for direct (reachable) dependencies of input packages
+extraDepsLatestConfig :: Traversable t => t Node -> PackageSetConfig -> PackageSetConfig
+extraDepsLatestConfig packages packageSetConfig =
+  let
+    reachable = reachableDeps packages
+    stackageLoader mHash pkgId =
+      if pkgName pkgId `Set.member` reachable
+      then packageLoader packageSetConfig Nothing pkgId
+      else packageLoader packageSetConfig mHash pkgId
+  in packageSetConfig { packageLoader = stackageLoader }
 
 writeOutFile :: Show source => source -> FilePath -> Doc -> IO ()
 writeOutFile source filePath contents =
