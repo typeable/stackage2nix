@@ -12,8 +12,13 @@ import           Options.Applicative as Opts
 import           Paths_stackage2nix ( version )
 import           Stack.Config
 import           Stack.Types
-import           System.Environment
 import           System.FilePath
+
+data Tweaks = Tweaks
+  { _tExtraDepsRevisionLatest :: Bool
+  } deriving (Show)
+
+makeLenses ''Tweaks
 
 -- | What will be generated
 data Target
@@ -49,6 +54,7 @@ data Options = Options
   , _optOutDerivation       :: FilePath
   , _optDoCheckPackages     :: Bool
   , _optDoHaddockPackages   :: Bool
+  , _optTweaks              :: Tweaks
   , _optHackageDb           :: Maybe HackageDb
   , _optNixpkgsRepository   :: FilePath
   , _optCompilerId          :: CompilerId
@@ -57,9 +63,6 @@ data Options = Options
   } deriving (Show)
 
 makeLenses ''Options
-
-envStackYaml :: IO (Maybe StackYaml)
-envStackYaml = fmap mkStackYaml <$> lookupEnv "STACK_YAML"
 
 mkStackYaml :: FilePath -> StackYaml
 mkStackYaml p = case splitFileName p of
@@ -77,6 +80,7 @@ options = Options
   <*> outDerivation
   <*> doCheckPackages
   <*> doHaddockPackages
+  <*> tweaks
   <*> optional hackageDb
   <*> nixpkgsRepository
   <*> compilerId
@@ -154,6 +158,14 @@ withStackageClosure :: Parser ()
 withStackageClosure = flag' ()
   ( long "with-stackage-closure"
     <> help "generate Stackage subset containing only build dependencies" )
+
+extraDepsRevisionLatest :: Parser Bool
+extraDepsRevisionLatest = switch
+  ( long "extra-deps-revision-latest"
+    <> help "Changes algorithm for the dependencies generation of the stack.yaml extra-deps. Default one is to generate exact revision defined in the Stackage config. With this flag enabled, direct dependencies of the stack.yaml extra-deps will be generated with the latest revision available on Hackage. This may help when Cabal fails to resolve dependencies of extra-deps, and dependences are fixed in the latest revision" )
+
+tweaks :: Parser Tweaks
+tweaks = Tweaks <$> extraDepsRevisionLatest
 
 resolver :: Parser StackResolver
 resolver = StackResolver <$> option text
