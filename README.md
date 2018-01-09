@@ -3,73 +3,76 @@
 [![Build Status](https://travis-ci.org/typeable/stackage2nix.svg?branch=master)](https://travis-ci.org/typeable/stackage2nix)
 
 `stackage2nix` converts a Stack file into a Nix Haskell packages set.
-It creates LTS Stackage packages set, and applies appropriate overrides on top of it.
 
-## Install
+# Create Nix build from stack.yaml
 
-You can install `stackage2nix` from the Nix expression:
+## Generate targets from stack.yaml only
+
+```
+stackage2nix .
+```
+
+Command creates file `default.nix` which overrides `haskell.packages.stackage`
+packages set. Currently Nixpkgs maintains only Hackage packages, but you can
+use [4e6/nixpkgs-stackage](https://github.com/4e6/nixpkgs-stackage) overlay that
+adds LTS Stackage packages.
+
+Build package with overlay installed:
+
+```
+nix-build -A stackage2nix
+```
+
+## Generate Stackage packages for the build
+
+If you don't want to use Stackage overlay, stackage2nix can generate required
+packages with `--with-stackage-closure` flag.
+
+``` bash
+stackage2nix \
+  --all-cabal-hashes /path/to/commercialhaskell/all-cabal-hashes \
+  --lts-haskell /path/to/fpco/lts-haskell \
+  --with-stackage-closure
+  ./stack.yaml
+```
+
+To generate Stackage packages, you should supply additional
+`--all-cabal-hashes` and `--lts-haskell` flags that points to
+[commercialhaskell/all-cabal-hashes](https://github.com/commercialhaskell)
+checked out to `hackage` branch and
+[fpco/lts-haskell](https://github.com/fpco/lts-haskell) respectively.
+
+You can use stackage2nix wrapper from `nix` directory that adds required flags:
 
 ```
 nix-env -i -f ./nix/stackage2nix
+stackage2nix --with-stackage ./stack.yaml
 ```
 
-It provides pre-configured wrapper around the raw executable with runtime
-`PATH` and all auxiliary flags set up.
+This command will produce `packages.nix` and `configuration-packages.nix`
+Stackage packages and its override in `default.nix`
 
-## Build project
+## Generate full Stackage
 
-Generate derivations from `stack.yaml` config using Nix wrapper:
-
-``` bash
-stackage2nix ./stack.yaml
-```
-
-if you're using the raw executable, you should supply additional flags. See
-section 'Flags' below for details.
-
-This command will result in a Haskell packages set, similar to
-`pkgs.haskell.packages.<compiler>`, containing only packages that are required
-to build targets listed in `stackage.yaml`. To build a package run:
-
-``` bash
-nix-build -A my-package
-```
-
-## Build stackage
-
-Generate complete Stackage packages set from resolver:
-
-``` bash
-stackage2nix --resolver lts-9.0
-```
-
-## Flags
+`--with-stackage` parameter generates full Stackage lts in addition to the
+targets from `stack.yaml`
 
 ```
-stackage2nix \
-  --lts-haskell "$LTS_HASKELL_REPO" \
-  --all-cabal-hashes "$ALL_CABAL_HASHES_REPO" \
-  .
+nix-env -i -f ./nix/stackage2nix
+stackage2nix --with-stackage ./stack.yaml
 ```
 
-`stackage2nix` has three required arguments:
-- `--lts-haskell` - path to [fpco/lts-haskell](https://github.com/fpco/lts-haskell)
-- `--all-cabal-hashes` - path to [commercialhaskell/all-cabal-hashes](https://github.com/commercialhaskell/all-cabal-hashes) checked out to `hackage` branch
-- `.` - path to stack.yaml file or directory
+## Generate Stackage from LTS resolver
 
-Produced Nix derivation split on following files:
-- packages.nix - Base Stackage packages set
-- configuration-packages.nix - Compiler configuration
-- default.nix - Final Haskell packages set with all overrides applied
-
-A particular package from result Haskell packages set can be built with:
+You can also generate only Stackage packages from the resolver:
 
 ```
-nix-build -A <package-name>
+nix-env -i -f ./nix/stackage2nix
+stackage2nix --resolver lts-10.0
 ```
 
-See also the [blog post](https://blog.typeable.io/posts/2017-08-24-stackage2nix.html)
-about history and motivation behind the project.
+This command will produce Stackage packages `packages.nix`, packages config
+`configuration-packages.nix` and a Nix Haskell packages set `default.nix`.
 
 ## Runtime dependencies
 
@@ -87,7 +90,7 @@ overrides on top of Haskell packages set produced by `stackage2nix`.
 
 ```
 with import <nixpkgs> {};
-with pkgs.haskell.lib;
+with haskell.lib;
 let haskellPackages = import ./. {};
 in haskellPackages.override {
   overrides = self: super: {
@@ -104,7 +107,7 @@ For more complex overrides and detailed information on how to work with Haskell 
 
 ## Tests
 
-Integration tests that build stackage2nix form different stack configs:
+Integration tests that build stackage2nix form different yaml configs:
 
 ```
 STACKAGE_REPO=<path/to/stackage/repo> \
