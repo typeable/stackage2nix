@@ -106,27 +106,25 @@ overrideStackage stackResolver nixpkgsPath packages = vcat
   ]
 
 pPrintHaskellPackages :: OverrideConfig -> Doc
-pPrintHaskellPackages oc =
-  let
-    nixpkgs = if oc ^. ocNixpkgs . to fromString == systemNixpkgs
-      then systemNixpkgs
-      else (disp . (fromString :: FilePath -> Nix.FilePath)) (oc ^. ocNixpkgs)
-  in vcat
+pPrintHaskellPackages oc = vcat
   [ funargs
-    [ "nixpkgs ? import " <> nixpkgs <> " {}"
+    [ "callPackage"
+    , "pkgs"
+    , "overrides ? (self: super: {})"
+    , "packageSetConfig ? (sefl: super: {})"
     ]
   , ""
-  , "with nixpkgs; let"
+  , "let"
   , nest 2 $ vcat
-    [ attr "haskellLib" "callPackage (nixpkgs.path + /pkgs/development/haskell-modules/lib.nix) {}"
+    [ attr "haskellLib" "pkgs.haskell.lib"
     ]
-  , "in callPackage (nixpkgs.path + /pkgs/development/haskell-modules) {"
+  , "in callPackage (<nixpkgs/pkgs/development/haskell-modules>) {"
   , nest 2 $ vcat
     [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
     , attr "compilerConfig" . importStackageConfig $ oc ^. ocStackageConfig
     , attr "initialPackages" . importStackagePackages $ oc ^. ocStackagePackages
     , attr "configurationCommon" "if builtins.pathExists ./configuration-common.nix then import ./configuration-common.nix else args: self: super: {}"
-    , "inherit haskellLib;"
+    , "inherit haskellLib overrides packageSetConfig;"
     ]
   , "}"
   ]
