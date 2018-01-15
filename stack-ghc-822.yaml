@@ -1,1 +1,4 @@
 resolver: lts-10.0
+extra-deps:
+  - cabal2nix-2.5
+  - hackage-db-1.22
