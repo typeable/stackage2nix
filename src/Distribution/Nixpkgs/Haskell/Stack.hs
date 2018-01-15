@@ -36,12 +36,26 @@ data StackPackagesConfig = StackPackagesConfig
 
 makeLenses ''StackPackagesConfig
 
+-- TODO: cabal2nix versions [2.6.0, 2.7.1, 2.7.2] cause #45 memory usage regression
+-- Possible fix would be to load 'Distribution.Nixpkgs.Haskell.Hackage.HackageDB'
+-- beforehand and pass it as an argument
 getStackPackageFromDb
   :: Maybe HackageDb
   -> StackPackage
   -> IO Package
-getStackPackageFromDb optHackageDb stackPackage =
-#if MIN_VERSION_cabal2nix(2,6,0)
+getStackPackageFromDb optHackageDb stackPackage = do
+#if MIN_VERSION_cabal2nix(2,7,2)
+  PackageSourceSpec.getPackage'
+    False
+    (PackageSourceSpec.loadHackageDB (unHackageDb <$> optHackageDb) Nothing)
+    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
+#elif MIN_VERSION_cabal2nix(2,7,1)
+  hackageDb <- PackageSourceSpec.loadHackageDB (unHackageDb <$> optHackageDb) Nothing
+  PackageSourceSpec.getPackage'
+    False
+    hackageDb
+    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
+#elif MIN_VERSION_cabal2nix(2,6,0)
   PackageSourceSpec.getPackage
     False
     (unHackageDb <$> optHackageDb)
