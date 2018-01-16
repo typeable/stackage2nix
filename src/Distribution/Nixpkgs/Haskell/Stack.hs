@@ -106,10 +106,9 @@ packageDerivation conf optHackageDb stackPackage = do
   let
     drv = genericPackageDerivation conf pkg
       & subpath %~ flip fromMaybe (stackPackage ^. spDir)
-    isExtraDep = stackPackage ^. spExtraDep
     pconf = PackageConfig
-      { enableCheck   = isExtraDep || conf ^. spcDoCheckPackages
-      , enableHaddock = isExtraDep || conf ^. spcDoHaddockPackages }
+      { enableCheck   = conf ^. spcDoCheckPackages
+      , enableHaddock = conf ^. spcDoHaddockPackages }
   return $ finalizePackage pkg pconf drv
 
 genericPackageDerivation
