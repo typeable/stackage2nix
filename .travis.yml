@@ -14,7 +14,6 @@ cache:
 
 env:
   - STACK_YAML=stack-ghc-802.yaml
-  - STACK_YAML=stack-ghc-821.yaml
   - STACK_YAML=stack-ghc-822.yaml
 
 jobs:

@@ -31,11 +31,11 @@ library
                      , LtsHaskell
                      , Paths_stackage2nix
   build-depends:       base > 4.7 && < 5
-                     , Cabal > 1.24
+                     , Cabal > 2
                      , QuickCheck
                      , aeson
                      , bytestring
-                     , cabal2nix >= 2.5
+                     , cabal2nix >= 2.7.2
                      , containers
                      , deepseq
                      , distribution-nixpkgs >= 1.1

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module Distribution.Nixpkgs.Haskell.Stack where
 
 import Control.Lens
@@ -9,6 +8,7 @@ import Distribution.Nixpkgs.Fetch
 import Distribution.Nixpkgs.Haskell.Derivation
 import Distribution.Nixpkgs.Haskell.FromCabal as FromCabal
 import Distribution.Nixpkgs.Haskell.FromStack as FromStack
+import Distribution.Nixpkgs.Haskell.Hackage as DB
 import Distribution.Nixpkgs.Haskell.PackageSourceSpec as PackageSourceSpec
 import Distribution.PackageDescription as PackageDescription
 import Distribution.System as System
@@ -16,13 +16,6 @@ import Network.URI as URI
 import Stack.Config
 
 
-newtype HackageDb = HackageDb { fromHackageDB :: T.Text }
-  deriving (Eq, Ord, Show)
-
-makePrisms ''HackageDb
-
-unHackageDb :: HackageDb -> String
-unHackageDb = T.unpack . fromHackageDB
 
 data StackPackagesConfig = StackPackagesConfig
   { _spcHaskellResolver   :: HaskellResolver
@@ -36,36 +29,12 @@ data StackPackagesConfig = StackPackagesConfig
 
 makeLenses ''StackPackagesConfig
 
--- TODO: cabal2nix versions [2.6.0, 2.7.1, 2.7.2] cause #45 memory usage regression
--- Possible fix would be to load 'Distribution.Nixpkgs.Haskell.Hackage.HackageDB'
--- beforehand and pass it as an argument
-getStackPackageFromDb
-  :: Maybe HackageDb
-  -> StackPackage
-  -> IO Package
-getStackPackageFromDb optHackageDb stackPackage = do
-#if MIN_VERSION_cabal2nix(2,7,2)
+getStackPackageFromDb :: DB.HackageDB -> StackPackage -> IO Package
+getStackPackageFromDb hackageDb stackPackage = do
   PackageSourceSpec.getPackage'
     False
-    (PackageSourceSpec.loadHackageDB (unHackageDb <$> optHackageDb) Nothing)
+    (pure hackageDb)
     (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
-#elif MIN_VERSION_cabal2nix(2,7,1)
-  hackageDb <- PackageSourceSpec.loadHackageDB (unHackageDb <$> optHackageDb) Nothing
-  PackageSourceSpec.getPackage'
-    False
-    hackageDb
-    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
-#elif MIN_VERSION_cabal2nix(2,6,0)
-  PackageSourceSpec.getPackage
-    False
-    (unHackageDb <$> optHackageDb)
-    Nothing
-    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
-#else
-  PackageSourceSpec.getPackage
-    (unHackageDb <$> optHackageDb)
-    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
-#endif
 
 stackLocationToSource
   :: PackageLocation
@@ -98,11 +67,11 @@ stackLocationToSource pl mCabalDir = case pl of
 
 packageDerivation
   :: StackPackagesConfig
-  -> Maybe HackageDb
+  -> DB.HackageDB
   -> StackPackage
   -> IO Derivation
-packageDerivation conf optHackageDb stackPackage = do
-  pkg <- getStackPackageFromDb optHackageDb stackPackage
+packageDerivation conf hackageDb stackPackage = do
+  pkg <- getStackPackageFromDb hackageDb stackPackage
   let
     drv = genericPackageDerivation conf pkg
       & subpath %~ flip fromMaybe (stackPackage ^. spDir)

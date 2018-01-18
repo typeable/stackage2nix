@@ -5,7 +5,6 @@ import           Data.Monoid ( (<>) )
 import           Data.Text as T
 import qualified Distribution.Compat.ReadP as P
 import           Distribution.Compiler as Compiler
-import           Distribution.Nixpkgs.Haskell.Stack
 import           Distribution.System as System
 import qualified Distribution.Text as Text
 import           Options.Applicative as Opts
@@ -55,7 +54,7 @@ data Options = Options
   , _optDoCheckPackages     :: Bool
   , _optDoHaddockPackages   :: Bool
   , _optTweaks              :: Tweaks
-  , _optHackageDb           :: Maybe HackageDb
+  , _optHackageDb           :: Maybe FilePath
   , _optNixpkgsRepository   :: FilePath
   , _optCompilerId          :: CompilerId
   , _optPlatform            :: Platform
@@ -83,7 +82,7 @@ options = Options
   <*> doCheckPackages
   <*> doHaddockPackages
   <*> tweaks
-  <*> optional hackageDb
+  <*> optional optionHackageDb
   <*> nixpkgsRepository
   <*> compilerId
   <*> platform
@@ -192,12 +191,11 @@ configOrigin =
 
 -- required for cabal2nix
 
-hackageDb :: Parser HackageDb
-hackageDb = HackageDb <$>
-  option text
-    ( long "hackage-db"
-      <> metavar "HACKAGE_DB"
-      <> help "path to the local hackage db in tar format" )
+optionHackageDb :: Parser FilePath
+optionHackageDb = option str
+  ( long "hackage-db"
+    <> metavar "HACKAGE_DB"
+    <> help "path to the local hackage db in tar format" )
 
 cabalFlag :: Parser CabalFlag
 cabalFlag = CabalFlag <$>
