@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module LtsHaskell where
 
 import AllCabalHashes
@@ -24,6 +23,7 @@ import Stackage.BuildPlan
 import Stackage.Types (SystemInfo(..))
 import System.FilePath as Path
 
+import qualified Distribution.Nixpkgs.Haskell.Hackage as DB
 import qualified Data.Yaml as Yaml
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -47,21 +47,17 @@ getPackageFromRepo allCabalHashesPath mSha1Hash pkgId = do
       (error (display pkgId ++ ": meta data has no SHA256 hash for the tarball"))
       (view (mHashes . at "SHA256") meta)
     source = DerivationSource "url" ("mirror://hackage/" ++ display pkgId ++ ".tar.gz") "" tarballSHA256
-#if MIN_VERSION_cabal2nix(2,6,0)
   return $ Package source False pkgDesc
-#else
-  return $ Package source pkgDesc
-#endif
 
-getPackageFromDb :: Maybe HackageDb -> PackageIdentifier -> IO Package
-getPackageFromDb mHackageDb pkgId =
-  getStackPackageFromDb mHackageDb
+getPackageFromDb :: DB.HackageDB -> PackageIdentifier -> IO Package
+getPackageFromDb hackageDb pkgId =
+  getStackPackageFromDb hackageDb
   $ StackPackage (HackagePackage (T.pack $ Text.display pkgId)) True Nothing
 
-loadPackage :: Maybe HackageDb -> FilePath -> Maybe SHA1Hash -> PackageIdentifier -> IO Package
-loadPackage mHackageDb allCabalHashesPath mSha1Hash pkgId =
+loadPackage :: DB.HackageDB -> FilePath -> Maybe SHA1Hash -> PackageIdentifier -> IO Package
+loadPackage hackageDb allCabalHashesPath mSha1Hash pkgId =
   getPackageFromRepo allCabalHashesPath mSha1Hash pkgId
-  `catchIOError` const (getPackageFromDb mHackageDb pkgId)
+  `catchIOError` const (getPackageFromDb hackageDb pkgId)
 
 ghcCompilerInfo :: Version -> CompilerInfo
 ghcCompilerInfo v = CompilerInfo
@@ -77,18 +73,18 @@ buildPlanContainsDependency packageVersions (Dependency depName versionRange) =
   maybe False (`withinRange` versionRange) $ Map.lookup depName packageVersions
 
 buildPackageSetConfig
-  :: Maybe HackageDb
+  :: DB.HackageDB
   -> FilePath
   -> FilePath
   -> BuildPlan
   -> IO PackageSetConfig
-buildPackageSetConfig mHackageDb optAllCabalHashes optNixpkgsRepository buildPlan = do
+buildPackageSetConfig hackageDb optAllCabalHashes optNixpkgsRepository buildPlan = do
   nixpkgs <- readNixpkgPackageMap optNixpkgsRepository Nothing
   let
     systemInfo      = bpSystemInfo buildPlan
     packageVersions = fmap ppVersion (bpPackages buildPlan) `Map.union` siCorePackages systemInfo
   return PackageSetConfig
-    { packageLoader   = loadPackage mHackageDb optAllCabalHashes
+    { packageLoader   = loadPackage hackageDb optAllCabalHashes
     , targetPlatform  = Platform (siArch systemInfo) (siOS systemInfo)
     , targetCompiler  = ghcCompilerInfo (siGhcVersion systemInfo)
     , nixpkgsResolver = resolve (Map.map (Set.map (over path ("pkgs":))) nixpkgs)
