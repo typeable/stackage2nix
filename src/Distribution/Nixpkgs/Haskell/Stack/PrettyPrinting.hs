@@ -110,23 +110,37 @@ pPrintHaskellPackages oc = vcat
   [ funargs
     [ "callPackage"
     , "pkgs"
+    , "stdenv"
+    , "lib"
     , "overrides ? (self: super: {})"
-    , "packageSetConfig ? (sefl: super: {})"
+    , "packageSetConfig ? (self: super: {})"
     ]
   , ""
   , "let"
   , nest 2 $ vcat
-    [ attr "haskellLib" "pkgs.haskell.lib"
-    ]
-  , "in callPackage (<nixpkgs/pkgs/development/haskell-modules>) {"
-  , nest 2 $ vcat
-    [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
+    [ "inherit (lib) extends makeExtensible;"
+    , attr "haskellLib" "pkgs.haskell.lib"
+    , "inherit (haskellLib) makePackageSet;"
+    , ""
+    , attr "haskellPackages" $ vcat
+      [ "pkgs.callPackage makePackageSet {"
+      , nest 2 $ vcat
+        [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
+        , attr "package-set" . importStackagePackages $ oc ^. ocStackagePackages
+        , "inherit stdenv haskellLib extensible-self;"
+        ]
+      , "}"
+      ]
+    , ""
     , attr "compilerConfig" . importStackageConfig $ oc ^. ocStackageConfig
-    , attr "initialPackages" . importStackagePackages $ oc ^. ocStackagePackages
-    , attr "configurationCommon" "if builtins.pathExists ./configuration-common.nix then import ./configuration-common.nix else args: self: super: {}"
-    , "inherit haskellLib overrides packageSetConfig;"
+    , ""
+    , attr "configurationCommon" "if builtins.pathExists ./configuration-common.nix then import ./configuration-common.nix { inherit pkgs haskellLib; } else self: super: {}"
+    , attr "configurationNix" "import <nixpkgs/pkgs/development/haskell-modules/configuration-nix.nix> { inherit pkgs haskellLib; }"
+    , ""
+    , attr "extensible-self" "makeExtensible (extends overrides (extends configurationCommon (extends packageSetConfig (extends compilerConfig (extends configurationNix haskellPackages)))))"
     ]
-  , "}"
+  , ""
+  , "in extensible-self"
   ]
 
 toNixGhcVersion :: Version -> Doc
