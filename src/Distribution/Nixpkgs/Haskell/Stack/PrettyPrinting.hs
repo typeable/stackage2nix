@@ -19,10 +19,10 @@ import           Stack.Config (StackResolver, unStackResolver)
 
 
 data OverrideConfig = OverrideConfig
-  { _ocGhc              :: !Version
-  , _ocStackagePackages :: !FilePath
-  , _ocStackageConfig   :: !FilePath
-  , _ocNixpkgs          :: !FilePath
+  { _ocGhc              :: Version
+  , _ocStackagePackages :: FilePath
+  , _ocStackageConfig   :: FilePath
+  , _ocNixpkgs          :: FilePath
   }
 
 makeLenses ''OverrideConfig
