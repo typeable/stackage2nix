@@ -1,5 +1,5 @@
 name:                stackage2nix
-version:             0.5.0
+version:             0.6.0
 synopsis:            Convert Stack files into Nix build instructions.
 homepage:            https://github.com/typeable/stackage2nix#readme
 license:             BSD3

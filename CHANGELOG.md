@@ -25,3 +25,5 @@
 - Remove `--do-haddock-stackage` flag (enabled by default)
 - Remove `--no-packages-closure` flag (use `--with-stackage-closure`)
 - Remove `cabal2nix < 2.7.2` support #45
+
+# 0.6.0
