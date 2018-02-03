@@ -28,6 +28,9 @@ jobs:
       - sudo mount --bind ~/.nix /nix
       - curl https://nixos.org/nix/install | sh
       - source ~/.nix-profile/etc/profile.d/nix.sh
+      # nixpkgs-unstable not supported
+      - nix-channel --add https://nixos.org/channels/nixos-17.09 nixpkgs
+      - nix-channel --update
       script:
       - nix-env -i cabal-install
       - cabal update
