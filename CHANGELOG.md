@@ -30,3 +30,7 @@
 
 - Replace call to `<nixpkgs/pkgs/development/haskell-modules>` in generated
   Haskell packages with `makePackageSet` library function
+
+# 0.6.1
+
+- Pass extra `buildHaskellPackages` argument to `makePackageSet` function
