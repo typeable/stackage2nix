@@ -109,6 +109,7 @@ pPrintHaskellPackages :: OverrideConfig -> Doc
 pPrintHaskellPackages oc = vcat
   [ funargs
     [ "callPackage"
+    , "buildPackages"
     , "pkgs"
     , "stdenv"
     , "lib"
@@ -125,7 +126,8 @@ pPrintHaskellPackages oc = vcat
     , attr "haskellPackages" $ vcat
       [ "pkgs.callPackage makePackageSet {"
       , nest 2 $ vcat
-        [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
+        [ attr "ghc" ("buildPackages.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
+        , attr "buildHaskellPackages" ("buildPackages.haskell.packages." <> toNixGhcVersion (oc ^. ocGhc))
         , attr "package-set" . importStackagePackages $ oc ^. ocStackagePackages
         , "inherit stdenv haskellLib extensible-self;"
         ]
