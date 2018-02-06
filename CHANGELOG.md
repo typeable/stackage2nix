@@ -27,3 +27,6 @@
 - Remove `cabal2nix < 2.7.2` support #45
 
 # 0.6.0
+
+- Replace call to `<nixpkgs/pkgs/development/haskell-modules>` in generated
+  Haskell packages with `makePackageSet` library function
