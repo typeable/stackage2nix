@@ -137,7 +137,7 @@ pPrintHaskellPackages oc = vcat
     , attr "compilerConfig" . importStackageConfig $ oc ^. ocStackageConfig
     , ""
     , attr "configurationCommon" "if builtins.pathExists ./configuration-common.nix then import ./configuration-common.nix { inherit pkgs haskellLib; } else self: super: {}"
-    , attr "configurationNix" "import <nixpkgs/pkgs/development/haskell-modules/configuration-nix.nix> { inherit pkgs haskellLib; }"
+    , attr "configurationNix" "import (pkgs.path + \"/pkgs/development/haskell-modules/configuration-nix.nix\") { inherit pkgs haskellLib; }"
     , ""
     , attr "extensible-self" "makeExtensible (extends overrides (extends configurationCommon (extends packageSetConfig (extends compilerConfig (extends configurationNix haskellPackages)))))"
     ]
