@@ -6,16 +6,15 @@ import Control.Lens
 import Data.Bifunctor
 import Data.ByteString as BS
 import Data.Coerce
-import Data.Foldable as F
 import Data.List.NonEmpty as NE
 import Data.Maybe
-import Data.Semigroup (sconcat)
+import Data.Semigroup
 import Data.Text as T
 import Data.Yaml
 import Network.URI
 import Stack.Config.Yaml as Yaml
 import Stack.Types
-import System.FilePath
+import System.FilePath as FilePath
 
 
 newtype StackResolver = StackResolver { fromStackResolver :: Text }
@@ -30,15 +29,29 @@ newtype Vcs = Vcs { fromVcs :: Text }
   deriving (Eq, Ord, Show)
 
 data Repo = Repo
-  { _rVcs    :: !Vcs
-  , _rUri    :: !Text
-  , _rCommit :: !Text
+  { _rVcs    :: Vcs
+  , _rUri    :: Text
+  , _rCommit :: Text
   } deriving (Eq, Ord, Show)
 
 makeLenses ''Repo
 
+data PackageRevision
+  = PrSha256 Text
+  | PrRev Text
+  deriving (Eq, Ord, Show)
+
+makePrisms ''PackageRevision
+
+data PackageIndex = PackageIndex
+  { _piNameVersion :: Text
+  , _piRevision    :: Maybe PackageRevision
+  } deriving (Eq, Ord, Show)
+
+makeLenses ''PackageIndex
+
 data PackageLocation
-  = HackagePackage Text
+  = StackIndex PackageIndex
   | StackFilePath FilePath
   | StackUri URI
   | StackRepo Repo
@@ -47,17 +60,17 @@ data PackageLocation
 makePrisms ''PackageLocation
 
 data StackPackage = StackPackage
-  { _spLocation :: !PackageLocation
-  , _spExtraDep :: !Bool
+  { _spLocation :: PackageLocation
+  , _spExtraDep :: Bool
     -- | Subdirectory containing the cabal file if any specified.
-  , _spDir  :: !(Maybe FilePath)
+  , _spDir      :: Maybe FilePath
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackPackage
 
 data StackConfig = StackConfig
-  { _scResolver  :: !StackResolver
-  , _scPackages  :: !(NonEmpty StackPackage)
+  { _scResolver  :: StackResolver
+  , _scPackages  :: NonEmpty StackPackage
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackConfig
@@ -66,52 +79,92 @@ fromYamlConfig :: Yaml.Config -> StackConfig
 fromYamlConfig c = StackConfig{..}
   where
     _scResolver = coerce $ c ^. cResolver
-    _scPackages = F.foldr (NE.<|) neYamlPackages yamlExtraDeps
-    neYamlPackages = fromMaybe (pure defaultPackage)
-                   . fmap sconcat $ NE.nonEmpty yamlPackages
-    yamlPackages   = fromYamlPackage <$> (fromMaybe mempty (c ^. cPackages))
-    yamlExtraDeps  = fromYamlExtraDep <$> fromMaybe mempty (c ^. cExtraDeps)
+    _scPackages = NE.nub
+      $ fromMaybe (pure defaultPackage)
+      $ fmap sconcat
+      $ NE.nonEmpty (yamlPackages <> yamlExtraDeps)
+    yamlPackages   = fromYamlPackage packagesSimplePath False
+      <$> fromMaybe mempty (c ^. cPackages)
+    yamlExtraDeps  = fromYamlPackage extraDepsSimplePath True
+      <$> fromMaybe mempty (c ^. cExtraDeps)
     defaultPackage = StackPackage (StackFilePath ".") False Nothing
 
+-- | Simple string in a packages section can be an URI or FilePath location
+packagesSimplePath :: Text -> StackPackage
+packagesSimplePath t = StackPackage (parseSimplePath t) False Nothing
 
+-- | Parse location as URI or a FilePath
+parseSimplePath :: Text -> PackageLocation
+parseSimplePath (T.unpack -> p) = maybe (StackFilePath p) StackUri $ parseURI p
+
+-- | Simple string in an extra-deps section can be an URI or FilePath or PackageIndex name-version
+extraDepsSimplePath :: Text -> StackPackage
+extraDepsSimplePath t = StackPackage loc True Nothing
+  where
+    loc = maybe (parsePackageIndex t) StackUri $ parseURI (T.unpack t)
+
+-- TODO: support new package index format with hash and revision
+parsePackageIndex :: Text -> PackageLocation
+parsePackageIndex t = if isFilePath t
+  then StackFilePath (T.unpack t)
+  else StackIndex $ PackageIndex t Nothing
+
+-- Determine wether package is file path
+isFilePath :: Text -> Bool
+isFilePath = T.any (== FilePath.pathSeparator)
+
+-- | A single 'Yaml.Package' can result in multiple actual
+-- packages if it has multiple subdirs specified.
 fromYamlPackage
-  :: Yaml.Package
-     -- ^ A single 'Yaml.Package' can result in multiple actual
-     -- packages if it has multiple subdirs specified.
+  :: (Text -> StackPackage)
+  -> Bool
+  -> Yaml.Package
   -> NonEmpty StackPackage
-fromYamlPackage = \case
+fromYamlPackage fromSimple isExtraDep = \case
   Yaml.Simple p                                  ->
-    unroll Nothing $ StackPackage (parseSimplePath p) False
+    pure (fromSimple p)
   Yaml.LocationSimple (Location p extraDep ms) ->
     unroll ms $ StackPackage (parseSimplePath p) (fromMaybe False extraDep)
-  Yaml.LocationGit (Location git extraDep ms)       ->
-    unroll ms $ StackPackage (StackRepo $ fromYamlGit git) (fromMaybe False extraDep)
-  Yaml.LocationHg (Location hg extraDep ms)       ->
-    unroll ms $ StackPackage (StackRepo $ fromYamlHg hg) (fromMaybe False extraDep)
+  Yaml.LocationGit loc       ->
+    mkStackPackageRepo fromYamlGit loc
+  Yaml.LocationHg loc       ->
+    mkStackPackageRepo fromYamlHg loc
+  Yaml.PNewGit ng -> unroll (ng ^. ngSubdirs)
+    $ StackPackage (StackRepo $ fromYamlNewGit ng) isExtraDep
+  Yaml.PNewHg nh -> unroll (nh ^. nhSubdirs)
+    $ StackPackage (StackRepo $ fromYamlNewHg nh) isExtraDep
   where
-    parseSimplePath (T.unpack -> p) = maybe (StackFilePath p) StackUri $ parseURI p
+    mkStackPackageRepo f loc = unroll (loc ^. lSubdirs)
+      $ StackPackage (StackRepo (loc ^. lLocation . to f)) (fromMaybe isExtraDep $ loc ^. lExtraDep)
     -- Each package gets a single directory with cabal file in it. If
     -- it's not specified, path is empty.
     unroll subs p = case subs of
       Just (x : xs) -> NE.map (p . Just) (x :| xs)
       _ -> p Nothing :| []
 
-fromYamlExtraDep :: Text -> StackPackage
-fromYamlExtraDep t = StackPackage (HackagePackage t) True Nothing
-
 fromYamlGit :: Yaml.Git -> Repo
-fromYamlGit yg = Repo{..}
-  where
-    _rVcs = Vcs "git"
-    _rUri = yg ^. gGit
-    _rCommit = yg ^. gCommit
+fromYamlGit yg = Repo
+  { _rVcs    = Vcs "git"
+  , _rUri    = yg ^. gGit
+  , _rCommit = yg ^. gCommit }
 
 fromYamlHg :: Yaml.Hg -> Repo
-fromYamlHg yh = Repo{..}
-  where
-    _rVcs = Vcs "hg"
-    _rUri = yh ^. hHg
-    _rCommit = yh ^. hCommit
+fromYamlHg yh = Repo
+  { _rVcs    = Vcs "hg"
+  , _rUri    = yh ^. hHg
+  , _rCommit = yh ^. hCommit }
+
+fromYamlNewGit :: NewGit -> Repo
+fromYamlNewGit ng = Repo
+  { _rVcs    = Vcs "git"
+  , _rUri    = ng ^. ngGit
+  , _rCommit = ng ^. ngCommit }
+
+fromYamlNewHg :: NewHg -> Repo
+fromYamlNewHg nh = Repo
+  { _rVcs    = Vcs "hg"
+  , _rUri    = nh ^. nhHg
+  , _rCommit = nh ^. nhCommit }
 
 readStackConfig :: StackYaml -> IO (Either String StackConfig)
 readStackConfig stackYaml = do

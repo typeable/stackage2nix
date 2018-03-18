@@ -42,8 +42,8 @@ stackLocationToSource
   -> Maybe FilePath
   -> Source
 stackLocationToSource pl mCabalDir = case pl of
-  HackagePackage p -> Source
-    { sourceUrl      = "cabal://" ++ T.unpack p
+  StackIndex p     -> Source
+    { sourceUrl      = "cabal://" ++ T.unpack (p ^. piNameVersion)
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = cabalDir }
