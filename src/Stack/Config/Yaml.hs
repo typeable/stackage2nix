@@ -16,6 +16,15 @@ data Location a = Location
 makeLenses ''Location
 deriveJSON jsonOpts ''Location
 
+data Archive = Archive
+  { _aArchive :: Text
+  , _aSha256  :: Maybe Text
+  , _aSubdirs :: Maybe [FilePath]
+  } deriving (Eq, Show)
+
+makeLenses ''Archive
+deriveJSON jsonOpts ''Archive
+
 data Git = Git
   { _gGit    :: Text
   , _gCommit :: Text
@@ -53,10 +62,11 @@ makeLenses ''NewHg
 deriveJSON jsonOpts ''NewHg
 
 data Package
-  = Simple Text
-  | LocationSimple (Location Text)
-  | LocationGit (Location Git)
-  | LocationHg (Location Hg)
+  = PSimple Text
+  | PLocationSimple (Location Text)
+  | PLocationGit (Location Git)
+  | PLocationHg (Location Hg)
+  | PArchive Archive
   | PNewGit NewGit
   | PNewHg NewHg
   deriving (Eq, Show)
@@ -65,21 +75,23 @@ makePrisms ''Package
 
 instance FromJSON Package where
   parseJSON v =
-    (Simple <$> parseJSON v) <|>
-    (LocationSimple <$> parseJSON v) <|>
-    (LocationGit <$> parseJSON v) <|>
-    (LocationHg <$> parseJSON v) <|>
+    (PSimple <$> parseJSON v) <|>
+    (PLocationSimple <$> parseJSON v) <|>
+    (PLocationGit <$> parseJSON v) <|>
+    (PLocationHg <$> parseJSON v) <|>
+    (PArchive <$> parseJSON v) <|>
     (PNewGit <$> parseJSON v) <|>
     (PNewHg <$> parseJSON v)
 
 instance ToJSON Package where
   toJSON = \case
-    Simple t         -> toJSON t
-    LocationSimple t -> toJSON t
-    LocationGit t    -> toJSON t
-    LocationHg t     -> toJSON t
-    PNewGit t        -> toJSON t
-    PNewHg t         -> toJSON t
+    PSimple t         -> toJSON t
+    PLocationSimple t -> toJSON t
+    PLocationGit t    -> toJSON t
+    PLocationHg t     -> toJSON t
+    PArchive t        -> toJSON t
+    PNewGit t         -> toJSON t
+    PNewHg t          -> toJSON t
 
 -- To support support both old and new syntax, we allow all varieties of package
 -- definitions in both "packages" and "extra-deps" sections

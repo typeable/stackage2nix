@@ -69,13 +69,18 @@ extra-deps:
     subdirs:
       - subdir1
       - subdir2
+  - archive: http://github.com/yesodweb/wai/archive/2f8a8e1b771829f4a8a77c0111352ce45a14c30f.zip
+    subdirs:
+    - wai
+    - warp
+  - archive: ../acme-missiles-0.3.tar.gz
+    sha256: e563d8b524017a06b32768c4db8eff1f822f3fb22a90320b7e414402647b735b
 |]
-
 
 configMinimal :: Config
 configMinimal = Config
   { _cResolver  = "lts-8.15"
-  , _cPackages  = Just [ Simple "." ]
+  , _cPackages  = Just [ PSimple "." ]
   , _cExtraDeps = Nothing
   }
 
@@ -83,46 +88,46 @@ config :: Config
 config = Config
   { _cResolver = "lts-3.7"
   , _cPackages = Just
-    [ Simple "."
-    , LocationSimple (Location "dir1/dir2" Nothing Nothing)
-    , LocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True) Nothing)
-    , LocationGit $ Location
+    [ PSimple "."
+    , PLocationSimple (Location "dir1/dir2" Nothing Nothing)
+    , PLocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True) Nothing)
+    , PLocationGit $ Location
        (Git
         "git@github.com:commercialhaskell/stack.git"
         "6a86ee32e5b869a877151f74064572225e1a0398")
        Nothing Nothing
-    , LocationGit (Location
+    , PLocationGit (Location
        (Git
         "git@github.com:example/mega-repo"
         "6a86ee32e5b869a877151f74064572225e1a0000")
        Nothing (Just ["subdir1", "subdir2"]))
     ]
   , _cExtraDeps = Just
-    [Simple "acme-missiles-0.3"]
+    [PSimple "acme-missiles-0.3"]
   }
 
 configNew :: Config
 configNew = Config
   { _cResolver = "lts-3.7"
   , _cPackages = Just
-    [ Simple "."
-    , LocationSimple (Location "dir1/dir2" Nothing Nothing)
-    , LocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True) Nothing)
-    , LocationGit $ Location
+    [ PSimple "."
+    , PLocationSimple (Location "dir1/dir2" Nothing Nothing)
+    , PLocationSimple (Location "https://example.com/foo/bar/baz-0.0.2.tar.gz" (Just True) Nothing)
+    , PLocationGit $ Location
        (Git
         "git@github.com:commercialhaskell/stack.git"
         "6a86ee32e5b869a877151f74064572225e1a0398")
        Nothing Nothing
-    , LocationGit (Location
+    , PLocationGit (Location
        (Git
         "git@github.com:example/mega-repo"
         "6a86ee32e5b869a877151f74064572225e1a0000")
        Nothing (Just ["subdir1", "subdir2"]))
     ]
   , _cExtraDeps = Just
-    [ Simple "acme-missiles-0.3"
-    , Simple "acme-missiles-hash-0.4@sha256:2ba66a092a32593880a87fb00f3213762d7bca65a687d45965778deb8694c5d1"
-    , Simple "acme-missiles-rev-0.5@rev:0"
+    [ PSimple "acme-missiles-0.3"
+    , PSimple "acme-missiles-hash-0.4@sha256:2ba66a092a32593880a87fb00f3213762d7bca65a687d45965778deb8694c5d1"
+    , PSimple "acme-missiles-rev-0.5@rev:0"
     , PNewGit $ NewGit
       "git@github.com:commercialhaskell/stack.git"
       "6a86ee32e5b869a877151f74064572225e1a0398"
@@ -131,6 +136,14 @@ configNew = Config
       "git@github.com:example/mega-repo"
       "6a86ee32e5b869a877151f74064572225e1a0000"
       (Just ["subdir1", "subdir2"])
+    , PArchive $ Archive
+      "http://github.com/yesodweb/wai/archive/2f8a8e1b771829f4a8a77c0111352ce45a14c30f.zip"
+      Nothing
+      (Just ["wai", "warp"])
+    , PArchive $ Archive
+      "../acme-missiles-0.3.tar.gz"
+      (Just "e563d8b524017a06b32768c4db8eff1f822f3fb22a90320b7e414402647b735b")
+      Nothing
     ]
   }
 
