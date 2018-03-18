@@ -123,17 +123,19 @@ fromYamlPackage
   -> Yaml.Package
   -> NonEmpty StackPackage
 fromYamlPackage fromSimple isExtraDep = \case
-  Yaml.Simple p                                  ->
+  Yaml.PSimple p                                ->
     pure (fromSimple p)
-  Yaml.LocationSimple (Location p extraDep ms) ->
+  Yaml.PLocationSimple (Location p extraDep ms) ->
     unroll ms $ StackPackage (parseSimplePath p) (fromMaybe False extraDep)
-  Yaml.LocationGit loc       ->
+  Yaml.PLocationGit loc                         ->
     mkStackPackageRepo fromYamlGit loc
-  Yaml.LocationHg loc       ->
+  Yaml.PLocationHg loc                          ->
     mkStackPackageRepo fromYamlHg loc
-  Yaml.PNewGit ng -> unroll (ng ^. ngSubdirs)
+  Yaml.PArchive a                               ->
+    unroll (a ^. aSubdirs) $ StackPackage (a ^. aArchive . to parseSimplePath) isExtraDep
+  Yaml.PNewGit ng                               -> unroll (ng ^. ngSubdirs)
     $ StackPackage (StackRepo $ fromYamlNewGit ng) isExtraDep
-  Yaml.PNewHg nh -> unroll (nh ^. nhSubdirs)
+  Yaml.PNewHg nh                                -> unroll (nh ^. nhSubdirs)
     $ StackPackage (StackRepo $ fromYamlNewHg nh) isExtraDep
   where
     mkStackPackageRepo f loc = unroll (loc ^. lSubdirs)
