@@ -148,10 +148,10 @@ configNew = Config
   }
 
 spec :: Spec
-spec = describe "Parse" $ do
-  specify "config-minimal" $
+spec = describe "Config" $ do
+  specify "minimal" $
     (Y.decode configYamlMinimal :: Maybe Config) `shouldBe` Just configMinimal
-  specify "config-full" $
+  specify "full" $
     (Y.decode configYaml :: Maybe Config) `shouldBe` Just config
-  specify "config-new" $
+  specify "new" $
     (Y.decode configNewYaml :: Maybe Config) `shouldBe` Just configNew

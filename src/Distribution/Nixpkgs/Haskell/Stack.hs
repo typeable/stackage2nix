@@ -42,22 +42,22 @@ stackLocationToSource
   -> Maybe FilePath
   -> Source
 stackLocationToSource pl mCabalDir = case pl of
-  StackIndex p     -> Source
+  PlIndex p    -> Source
     { sourceUrl      = "cabal://" ++ T.unpack (p ^. piNameVersion)
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = cabalDir }
-  StackFilePath p  -> Source
+  PlFilePath p -> Source
     { sourceUrl      = p
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = cabalDir }
-  StackUri uri     -> Source
+  PlUri uri    -> Source
     { sourceUrl      = URI.uriToString id uri mempty
     , sourceRevision = mempty
     , sourceHash     = UnknownHash
     , sourceCabalDir = cabalDir }
-  StackRepo r      -> Source
+  PlRepo r     -> Source
     { sourceUrl      = T.unpack $ r ^. rUri
     , sourceRevision = T.unpack $ r ^. rCommit
     , sourceHash     = UnknownHash
