@@ -52,10 +52,10 @@ data PackageIndex = PackageIndex
 makeLenses ''PackageIndex
 
 data PackageLocation
-  = StackIndex PackageIndex
-  | StackFilePath FilePath
-  | StackUri URI
-  | StackRepo Repo
+  = PlIndex PackageIndex
+  | PlFilePath FilePath
+  | PlUri URI
+  | PlRepo Repo
   deriving (Eq, Ord, Show)
 
 makePrisms ''PackageLocation
@@ -89,7 +89,7 @@ fromYamlConfig c = StackConfig{..}
       <$> fromMaybe mempty (c ^. cPackages)
     yamlExtraDeps  = fromYamlPackage extraDepsSimplePath True
       <$> fromMaybe mempty (c ^. cExtraDeps)
-    defaultPackage = StackPackage (StackFilePath ".") False Nothing
+    defaultPackage = StackPackage (PlFilePath ".") False Nothing
 
 -- | Simple string in a packages section can be an URI or FilePath location
 packagesSimplePath :: Text -> StackPackage
@@ -97,19 +97,19 @@ packagesSimplePath t = StackPackage (parseSimplePath t) False Nothing
 
 -- | Parse location as URI or a FilePath
 parseSimplePath :: Text -> PackageLocation
-parseSimplePath (T.unpack -> p) = maybe (StackFilePath p) StackUri $ parseURI p
+parseSimplePath (T.unpack -> p) = maybe (PlFilePath p) PlUri $ parseURI p
 
 -- | Simple string in an extra-deps section can be an URI or FilePath or PackageIndex name-version
 extraDepsSimplePath :: Text -> StackPackage
 extraDepsSimplePath t = StackPackage loc True Nothing
   where
-    loc = maybe (parsePackageIndex t) StackUri $ parseURI (T.unpack t)
+    loc = maybe (parsePackageIndex t) PlUri $ parseURI (T.unpack t)
 
 -- TODO: support new package index format with hash and revision
 parsePackageIndex :: Text -> PackageLocation
 parsePackageIndex t = if isFilePath t
-  then StackFilePath (T.unpack t)
-  else StackIndex $ PackageIndex t Nothing
+  then PlFilePath (T.unpack t)
+  else PlIndex $ PackageIndex t Nothing
 
 -- Determine wether package is file path
 isFilePath :: Text -> Bool
@@ -134,12 +134,12 @@ fromYamlPackage fromSimple isExtraDep = \case
   Yaml.PArchive a                               ->
     unroll (a ^. aSubdirs) $ StackPackage (a ^. aArchive . to parseSimplePath) isExtraDep
   Yaml.PNewGit ng                               -> unroll (ng ^. ngSubdirs)
-    $ StackPackage (StackRepo $ fromYamlNewGit ng) isExtraDep
+    $ StackPackage (PlRepo $ fromYamlNewGit ng) isExtraDep
   Yaml.PNewHg nh                                -> unroll (nh ^. nhSubdirs)
-    $ StackPackage (StackRepo $ fromYamlNewHg nh) isExtraDep
+    $ StackPackage (PlRepo $ fromYamlNewHg nh) isExtraDep
   where
     mkStackPackageRepo f loc = unroll (loc ^. lSubdirs)
-      $ StackPackage (StackRepo (loc ^. lLocation . to f)) (fromMaybe isExtraDep $ loc ^. lExtraDep)
+      $ StackPackage (PlRepo (loc ^. lLocation . to f)) (fromMaybe isExtraDep $ loc ^. lExtraDep)
     -- Each package gets a single directory with cabal file in it. If
     -- it's not specified, path is empty.
     unroll subs p = case subs of
@@ -174,7 +174,7 @@ readStackConfig :: StackYaml -> IO (Either String StackConfig)
 readStackConfig stackYaml = do
   let
     relativeToStackYaml = \case
-      StackFilePath p -> StackFilePath $ stackYaml ^. syDirName </> p
+      PlFilePath p -> PlFilePath $ stackYaml ^. syDirName </> p
       packageLocation -> packageLocation
     mkStackConfig = over (scPackages . traversed . spLocation) relativeToStackYaml
       . fromYamlConfig

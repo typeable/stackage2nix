@@ -93,8 +93,8 @@ instance ToJSON Package where
     PNewGit t         -> toJSON t
     PNewHg t          -> toJSON t
 
--- To support support both old and new syntax, we allow all varieties of package
--- definitions in both "packages" and "extra-deps" sections
+-- To support both old and new syntax, we allow all variants of package
+-- definitions in "packages" and "extra-deps" sections
 data Config = Config
   { _cResolver  :: Text
   , _cPackages  :: Maybe [Package]
