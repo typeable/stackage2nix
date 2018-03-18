@@ -52,7 +52,7 @@ getPackageFromRepo allCabalHashesPath mSha1Hash pkgId = do
 getPackageFromDb :: DB.HackageDB -> PackageIdentifier -> IO Package
 getPackageFromDb hackageDb pkgId =
   getStackPackageFromDb hackageDb
-  $ StackPackage (HackagePackage (T.pack $ Text.display pkgId)) True Nothing
+  $ StackPackage (StackIndex $ PackageIndex (T.pack $ Text.display pkgId) Nothing) True Nothing
 
 loadPackage :: DB.HackageDB -> FilePath -> Maybe SHA1Hash -> PackageIdentifier -> IO Package
 loadPackage hackageDb allCabalHashesPath mSha1Hash pkgId =
