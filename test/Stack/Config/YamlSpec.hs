@@ -60,8 +60,8 @@ packages:
 # Comment
 extra-deps:
   - acme-missiles-0.3
-  - acme-missiles-hash-0.4@@sha256:2ba66a092a32593880a87fb00f3213762d7bca65a687d45965778deb8694c5d1
-  - acme-missiles-rev-0.5@@rev:0
+  - acme-missiles-hash-0.4@sha256:2ba66a092a32593880a87fb00f3213762d7bca65a687d45965778deb8694c5d1
+  - acme-missiles-rev-0.5@rev:0
   - git: git@github.com:commercialhaskell/stack.git
     commit: 6a86ee32e5b869a877151f74064572225e1a0398
   - git: git@github.com:example/mega-repo
@@ -121,8 +121,8 @@ configNew = Config
     ]
   , _cExtraDeps = Just
     [ Simple "acme-missiles-0.3"
-    , Simple "acme-missiles-hash-0.4@@sha256:2ba66a092a32593880a87fb00f3213762d7bca65a687d45965778deb8694c5d1"
-    , Simple "acme-missiles-rev-0.5@@rev:0"
+    , Simple "acme-missiles-hash-0.4@sha256:2ba66a092a32593880a87fb00f3213762d7bca65a687d45965778deb8694c5d1"
+    , Simple "acme-missiles-rev-0.5@rev:0"
     , PNewGit $ NewGit
       "git@github.com:commercialhaskell/stack.git"
       "6a86ee32e5b869a877151f74064572225e1a0398"
