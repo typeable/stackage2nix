@@ -6,6 +6,7 @@ import Control.Lens
 import Data.Bifunctor
 import Data.ByteString as BS
 import Data.Coerce
+import Data.Foldable as F
 import Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Semigroup
@@ -79,10 +80,11 @@ fromYamlConfig :: Yaml.Config -> StackConfig
 fromYamlConfig c = StackConfig{..}
   where
     _scResolver = coerce $ c ^. cResolver
-    _scPackages = NE.nub
-      $ fromMaybe (pure defaultPackage)
+    -- 'NE.nub' replicates Stack behavior of having a Set of packages rather than list
+    _scPackages = NE.nub $ F.foldl' (<>) nePackages yamlExtraDeps
+    nePackages = fromMaybe (pure defaultPackage)
       $ fmap sconcat
-      $ NE.nonEmpty (yamlPackages <> yamlExtraDeps)
+      $ NE.nonEmpty yamlPackages
     yamlPackages   = fromYamlPackage packagesSimplePath False
       <$> fromMaybe mempty (c ^. cPackages)
     yamlExtraDeps  = fromYamlPackage extraDepsSimplePath True
