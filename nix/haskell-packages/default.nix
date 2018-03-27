@@ -87,6 +87,7 @@ let
   
 in callPackage (nixpkgs.path + "/pkgs/development/haskell-modules") {
   ghc = pkgs.haskell.compiler.ghc822;
+  buildHaskellPackages = buildPackages.haskell.packages.ghc822;
   compilerConfig = self: extends pkgOverrides (stackageConfig self);
   initialPackages = stackagePackages;
   configurationCommon = args: self: super: {};
