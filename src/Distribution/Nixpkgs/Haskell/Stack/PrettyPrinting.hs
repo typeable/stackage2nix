@@ -79,14 +79,16 @@ overrideHaskellPackages oc packages = vcat
     ]
   , "in callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules\") {"
   , nest 2 $ vcat
-    [ attr "ghc" ("pkgs.haskell.compiler." <> toNixGhcVersion (oc ^. ocGhc))
+    [ attr "ghc" ("pkgs.haskell.compiler." <> nixGhc)
+    , attr "buildHaskellPackages" ("buildPackages.haskell.packages." <> nixGhc)
     , attr "compilerConfig" "self: extends pkgOverrides (stackageConfig self)"
     , attr "initialPackages" "stackagePackages"
     , attr "configurationCommon" "args: self: super: {}"
     , "inherit haskellLib;"
     ]
   , "}"
-  ]
+  ] where
+        nixGhc = toNixGhcVersion (oc ^. ocGhc)
 
 overrideStackage :: StackResolver -> FilePath -> NonEmpty Derivation -> Doc
 overrideStackage stackResolver nixpkgsPath packages = vcat
