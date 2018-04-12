@@ -1,12 +1,16 @@
-# 0.3.0
-- Initial Hackage release
-- Add CHANGELOG.md
+# 0.7.0
+- Add compatibility with nixos-18.03
+- Drop compatibility with nixos-17-09
+- Add partial support for new stack extra-deps syntax.
+  https://docs.haskellstack.org/en/stable/yaml_configuration/#packages-and-extra-deps
+  Supported same syntax for packages and extra-deps sections
 
-# 0.4.0
-- Add `--resolver` option to generate full stackage packages set
-- Add Nix wrapper, see `nix/README.md`
-- Upd support cabal2nix >2.5
-- Fix honor `--hackage-db` flag
+# 0.6.1
+- Pass extra `buildHaskellPackages` argument to `makePackageSet` function
+
+# 0.6.0
+- Replace call to `<nixpkgs/pkgs/development/haskell-modules>` in generated
+  Haskell packages with `makePackageSet` library function
 
 # 0.5.0
 - Add `--with-stackage` and `--with-stackage-closure` flag generates stackage
@@ -26,11 +30,12 @@
 - Remove `--no-packages-closure` flag (use `--with-stackage-closure`)
 - Remove `cabal2nix < 2.7.2` support #45
 
-# 0.6.0
+# 0.4.0
+- Add `--resolver` option to generate full stackage packages set
+- Add Nix wrapper, see `nix/README.md`
+- Upd support cabal2nix >2.5
+- Fix honor `--hackage-db` flag
 
-- Replace call to `<nixpkgs/pkgs/development/haskell-modules>` in generated
-  Haskell packages with `makePackageSet` library function
-
-# 0.6.1
-
-- Pass extra `buildHaskellPackages` argument to `makePackageSet` function
+# 0.3.0
+- Initial Hackage release
+- Add CHANGELOG.md
