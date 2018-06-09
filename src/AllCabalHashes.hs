@@ -1,9 +1,9 @@
 module AllCabalHashes where
 
 import Control.Lens hiding ((<.>))
+import Control.Monad (when)
 import Data.Aeson as A
 import Data.ByteString as BS
-import Data.ByteString.Lazy as BSL
 import Data.Map as M
 import Data.Text as T
 import Data.Text.Encoding as T
@@ -12,9 +12,8 @@ import Distribution.Package
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parse
 import Distribution.Text ( display )
-import Git
-import Git.Libgit2 as Libgit2
 import OpenSSL.Digest as SSL ( digest, digestByName )
+import System.Directory
 import System.FilePath
 
 
@@ -38,14 +37,12 @@ instance FromJSON Meta where
 
 readPackageByHash :: FilePath -> SHA1Hash -> IO (GenericPackageDescription, SHA256Hash)
 readPackageByHash repoDir sha1Hash = do
-  let repoOpts = defaultRepositoryOptions { repoPath = repoDir }
-  repo <- openLgRepository repoOpts
-  buf <- runLgRepository repo $ do
-    BlobObj (Blob _ contents) <- lookupObject =<< parseOid sha1Hash
-    case contents of
-      BlobString bs -> return bs
-      BlobStringLazy bsl -> return $ BSL.toStrict bsl
-      _ -> fail $ "Git SHA1 " ++ show sha1Hash ++ ": expected single Blob"
+  let (l1, rest) = T.splitAt 2 sha1Hash
+      (l2, _) = T.splitAt 2 rest
+      fullPath = repoDir </> "_hash-lookup" </> T.unpack l1 </> T.unpack l2 </> T.unpack sha1Hash
+  exists <- doesFileExist fullPath
+  when (not exists) $ fail (fullPath ++ " doesn't exists")
+  buf <- BS.readFile fullPath
   cabal <- case parseGenericPackageDescription (T.unpack $ T.decodeUtf8 buf) of
     ParseOk _ a     -> return a
     ParseFailed err -> fail ("Git SHA1 " ++ show sha1Hash ++ ": " ++ show err)

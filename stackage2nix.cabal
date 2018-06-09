@@ -38,11 +38,10 @@ library
                      , cabal2nix >= 2.7.2
                      , containers
                      , deepseq
+                     , directory
                      , distribution-nixpkgs >= 1.1
                      , exceptions > 0.8
                      , filepath
-                     , gitlib > 3
-                     , gitlib-libgit2 > 3
                      , hopenssl > 2.2
                      , inflections >= 0.3
                      , language-nix
