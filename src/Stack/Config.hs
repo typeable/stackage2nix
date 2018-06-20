@@ -190,5 +190,6 @@ readStackConfig stackYaml = do
       PlFilePath p -> PlFilePath $ stackYaml ^. syDirName </> p
       packageLocation -> packageLocation
     mkStackConfig = over (scPackages . traversed . spLocation) relativeToStackYaml
+      . over (scExtraDeps . traversed . spLocation) relativeToStackYaml
       . fromYamlConfig
   second mkStackConfig . decodeEither <$> BS.readFile (stackYaml ^. syFilePath)
