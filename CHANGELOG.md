@@ -1,3 +1,6 @@
+# 0.7.1
+- Generate stack packages `stack-yaml-packages.nix`
+
 # 0.7.0
 - Add compatibility with nixos-18.03
 - Drop compatibility with nixos-17-09
