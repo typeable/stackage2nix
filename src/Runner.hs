@@ -25,8 +25,9 @@ import Stackage.Types
 import System.IO (withFile, IOMode(..), hPutStrLn)
 import Text.PrettyPrint.HughesPJClass (Doc, render)
 
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 import qualified LtsHaskell as LH
 
 run :: IO ()
@@ -51,6 +52,11 @@ run = do
         stackPackagesConfig = mkStackPackagesConfig opts
       stackConfPackages <- traverse (fmap mkNode . packageDerivation stackPackagesConfig hackageDb)
         $ stackConf ^. scPackages
+      stackConfExtraDeps  <- traverse (fmap mkNode . packageDerivation stackPackagesConfig hackageDb)
+        $ stackConf ^. scExtraDeps
+      let
+        stackConfAllPackages = maybe stackConfPackages ((<>) stackConfPackages)
+          $ NE.nonEmpty stackConfExtraDeps
 
       case buildTarget of
         TargetStackageClosure -> do
@@ -58,11 +64,11 @@ run = do
           let
             overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
             stackageSetConfig = if opts ^. optTweaks . tExtraDepsRevisionLatest
-              then extraDepsLatestConfig stackConfPackages packageSetConfig
+              then extraDepsLatestConfig stackConfAllPackages packageSetConfig
               else packageSetConfig
           stackagePackages <- buildStackagePackages stackageSetConfig buildPlan
           let
-            reachable = reachableDeps stackConfPackages
+            reachable = reachableDeps stackConfAllPackages
             -- Nixpkgs generic-builder puts hscolour on path for all libraries
             withHscolour pkgs =
               let hscolour = F.find ((== "hscolour") . nodeName) stackagePackages
@@ -84,14 +90,14 @@ run = do
           writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
             $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
           writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-            $ PP.overrideHaskellPackages overrideConfig (view nodeDerivation <$> stackConfPackages)
+            $ PP.overrideHaskellPackages overrideConfig (view nodeDerivation <$> stackConfAllPackages)
 
         TargetStackagePackages -> do
           (buildPlanFile, buildPlan, packageSetConfig) <- loadStackageBuildPlan hackageDb stackResolver opts sopts
           let
             overrideConfig = mkOverrideConfig opts (siGhcVersion $ bpSystemInfo buildPlan)
             stackageSetConfig = if opts ^. optTweaks . tExtraDepsRevisionLatest
-              then extraDepsLatestConfig stackConfPackages packageSetConfig
+              then extraDepsLatestConfig stackConfAllPackages packageSetConfig
               else packageSetConfig
             -- stackageLoader mHash pkgId =
             --   if pkgName pkgId `Set.member` reachable
@@ -104,14 +110,16 @@ run = do
           writeOutFile buildPlanFile (opts ^. optOutStackageConfig)
             $ pPrintOutConfig (bpSystemInfo buildPlan) nodes
           writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
-            $ PP.overrideHaskellPackages overrideConfig (view nodeDerivation <$> stackConfPackages)
+            $ PP.overrideHaskellPackages overrideConfig (view nodeDerivation <$> stackConfAllPackages)
 
-        TargetStackageOverride ->
-          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation) $
-          PP.overrideStackage
-          (stackConf ^. scResolver)
-          (opts ^. optNixpkgsRepository)
-          (view nodeDerivation <$> stackConfPackages)
+        TargetStackageOverride -> do
+          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutDerivation)
+            $ PP.overrideStackage
+            (stackConf ^. scResolver)
+            (opts ^. optNixpkgsRepository)
+            (view nodeDerivation <$> stackConfAllPackages)
+          writeOutFile (stackYaml ^. syFilePath) (opts ^. optOutStackYamlPackages)
+            $ PP.stackYamlPackages (view nodeDerivation <$> stackConfPackages)
 
     -- Generate Stackage packages from resolver
     OriginResolver stackResolver -> do
