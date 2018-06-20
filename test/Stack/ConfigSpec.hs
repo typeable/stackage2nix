@@ -51,6 +51,7 @@ minimalConf = StackConfig
   { _scResolver  = StackResolver "lts-10.0"
   , _scPackages  = NE.fromList
     [ StackPackage (PlFilePath ".") False Nothing]
+  , _scExtraDeps = []
   }
 
 packageDefaultBs :: ByteString
@@ -73,10 +74,11 @@ packages:
 
 packageSimpleListConf :: StackConfig
 packageSimpleListConf = StackConfig
-  { _scResolver = StackResolver "lts-10.0"
-  , _scPackages = NE.fromList
+  { _scResolver  = StackResolver "lts-10.0"
+  , _scPackages  = NE.fromList
     [ StackPackage (PlFilePath "client") False Nothing
     , StackPackage (PlFilePath "server") False Nothing ]
+  , _scExtraDeps = []
   }
 
 packageLocationsBs :: ByteString
@@ -102,11 +104,12 @@ packages:
 
 packageLocationsConf :: StackConfig
 packageLocationsConf = StackConfig
-  { _scResolver = StackResolver "lts-10.0"
-  , _scPackages = NE.fromList
+  { _scResolver  = StackResolver "lts-10.0"
+  , _scPackages  = NE.fromList
     [ StackPackage (PlFilePath "humble/package") False (Just "client")
-    , StackPackage (PlFilePath "humble/package") False (Just "server")
-    , StackPackage (PlUri $ stUri "https://example.com/foo/bar/baz-0.0.2.tar.gz") True (Just "extra")
+    , StackPackage (PlFilePath "humble/package") False (Just "server") ]
+  , _scExtraDeps =
+    [ StackPackage (PlUri $ stUri "https://example.com/foo/bar/baz-0.0.2.tar.gz") True (Just "extra")
     , StackPackage (PlRepo $ Repo (Vcs "git") "git@github.com:example/mega-repo" "6a86ee32e5b869a877151f74064572225e1a0000") True (Just "subdir1")
     , StackPackage (PlRepo $ Repo (Vcs "git") "git@github.com:example/mega-repo" "6a86ee32e5b869a877151f74064572225e1a0000") True (Just "subdir2")
     ]
@@ -122,10 +125,10 @@ extra-deps:
 
 packageExtraDepsConf :: StackConfig
 packageExtraDepsConf = StackConfig
-  { _scResolver = StackResolver "lts-10.0"
-  , _scPackages = NE.fromList
-    [ StackPackage (PlFilePath ".") False Nothing
-    , StackPackage (PlIndex $ PackageIndex "acme-missiles-0.3" Nothing) True Nothing
+  { _scResolver  = StackResolver "lts-10.0"
+  , _scPackages  = NE.fromList [ StackPackage (PlFilePath ".") False Nothing ]
+  , _scExtraDeps =
+    [ StackPackage (PlIndex $ PackageIndex "acme-missiles-0.3" Nothing) True Nothing
     , StackPackage (PlIndex $ PackageIndex "humble-package-1" Nothing) True Nothing ]
   }
 
@@ -142,11 +145,12 @@ extra-deps:
 
 packageMixedConf :: StackConfig
 packageMixedConf = StackConfig
-  { _scResolver = StackResolver "lts-10.0"
-  , _scPackages = NE.fromList
+  { _scResolver  = StackResolver "lts-10.0"
+  , _scPackages  = NE.fromList
     [ StackPackage (PlFilePath "client") False Nothing
-    , StackPackage (PlFilePath "server") False Nothing
-    , StackPackage (PlIndex $ PackageIndex "acme-missiles-0.3" Nothing) True Nothing
+    , StackPackage (PlFilePath "server") False Nothing ]
+  , _scExtraDeps =
+    [ StackPackage (PlIndex $ PackageIndex "acme-missiles-0.3" Nothing) True Nothing
     , StackPackage (PlIndex $ PackageIndex "humble-package-1" Nothing) True Nothing ]
   }
 
@@ -172,10 +176,10 @@ extra-deps:
 
 packageExtraDepsNewConf :: StackConfig
 packageExtraDepsNewConf = StackConfig
-  { _scResolver = StackResolver "lts-10.0"
-  , _scPackages = NE.fromList
-    [ StackPackage (PlFilePath ".") False Nothing
-    , StackPackage (PlFilePath "vendor/lib") True Nothing
+  { _scResolver  = StackResolver "lts-10.0"
+  , _scPackages  = NE.fromList [ StackPackage (PlFilePath ".") False Nothing ]
+  , _scExtraDeps =
+    [ StackPackage (PlFilePath "vendor/lib") True Nothing
     , StackPackage (PlIndex $ PackageIndex "acme-missiles-0.3" Nothing) True Nothing
     , StackPackage (PlRepo $ Repo (Vcs "git") "git@github.com:yesodweb/wai" "2f8a8e1b771829f4a8a77c0111352ce45a14c30f") True (Just "auto-update")
     , StackPackage (PlRepo $ Repo (Vcs "git") "git@github.com:yesodweb/wai" "2f8a8e1b771829f4a8a77c0111352ce45a14c30f") True (Just "wai")

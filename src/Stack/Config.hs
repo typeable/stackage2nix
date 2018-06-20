@@ -6,7 +6,7 @@ import Control.Lens
 import Data.Bifunctor
 import Data.ByteString as BS
 import Data.Coerce
-import Data.Foldable as F
+import Data.List as L
 import Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Semigroup
@@ -72,22 +72,35 @@ makeLenses ''StackPackage
 data StackConfig = StackConfig
   { _scResolver  :: StackResolver
   , _scPackages  :: NonEmpty StackPackage
+  , _scExtraDeps :: [StackPackage]
   } deriving (Eq, Ord, Show)
 
 makeLenses ''StackConfig
+
+scAllPackages :: Getter StackConfig (NonEmpty StackPackage)
+scAllPackages = to allPs
+  where
+    allPs sc = maybe ps ((<>) ps) (NE.nonEmpty ed)
+      where
+        ps = sc ^. scPackages
+        ed = sc ^. scExtraDeps
 
 fromYamlConfig :: Yaml.Config -> StackConfig
 fromYamlConfig c = StackConfig{..}
   where
     _scResolver = coerce $ c ^. cResolver
-    -- 'NE.nub' replicates Stack behavior of having a Set of packages rather than list
-    _scPackages = NE.nub $ F.foldl' (<>) nePackages yamlExtraDeps
+    -- 'nub' replicates Stack behavior of having a Set of packages rather than list
+    _scPackages  = NE.nub nePackages
+    _scExtraDeps = L.nub $ extraDeps ++ yamlExtraDeps
     nePackages = fromMaybe (pure defaultPackage)
-      $ fmap sconcat
-      $ NE.nonEmpty yamlPackages
-    yamlPackages   = fromYamlPackage packagesSimplePath False
+      $ NE.nonEmpty packages
+    -- yaml packages section can contain extra-deps
+    (extraDeps, packages) = L.partition (view spExtraDep) yamlPackages
+    yamlPackages   = L.concatMap NE.toList
+      $ fromYamlPackage packagesSimplePath False
       <$> fromMaybe mempty (c ^. cPackages)
-    yamlExtraDeps  = fromYamlPackage extraDepsSimplePath True
+    yamlExtraDeps  = L.concatMap NE.toList
+      $ fromYamlPackage extraDepsSimplePath True
       <$> fromMaybe mempty (c ^. cExtraDeps)
     defaultPackage = StackPackage (PlFilePath ".") False Nothing
 

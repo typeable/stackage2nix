@@ -75,7 +75,6 @@ overrideHaskellPackages oc packages = vcat
     , nest 2 "inherit pkgs stdenv;"
     , nest 2 "inherit (self) callPackage;"
     , "};"
-    , attr "stackYamlPackages" (stackYamlPackages $ pkgName . packageId <$> packages)
      ]
   , "in callPackage (nixpkgs.path + \"/pkgs/development/haskell-modules\") {"
   , nest 2 $ vcat
@@ -86,9 +85,10 @@ overrideHaskellPackages oc packages = vcat
     , attr "configurationCommon" "args: self: super: {}"
     , "inherit haskellLib;"
     ]
-  , "} // { inherit stackYamlPackages; }"
-  ] where
-        nixGhc = toNixGhcVersion (oc ^. ocGhc)
+  , "}"
+  ]
+  where
+    nixGhc = toNixGhcVersion (oc ^. ocGhc)
 
 overrideStackage :: StackResolver -> FilePath -> NonEmpty Derivation -> Doc
 overrideStackage stackResolver nixpkgsPath packages = vcat
@@ -100,12 +100,11 @@ overrideStackage stackResolver nixpkgsPath packages = vcat
   , nest 2 $ vcat
     [ "stackPackages ="
     , nest 2 $ overridePackages packages <> semi
-    , attr "stackYamlPackages" (stackYamlPackages $ pkgName . packageId <$> packages)
     ]
   , "in nixpkgs.haskell.packages.stackage." <> toNixStackResolver stackResolver <> ".override {"
   , nest 2
     $ attr "packageSetConfig" "self: super: stackPackages { inherit (nixpkgs) pkgs stdenv; inherit (self) callPackage; } super"
-  , "} // { inherit stackYamlPackages; }"
+  , "}"
   ]
 
 pPrintHaskellPackages :: OverrideConfig -> Doc
@@ -148,14 +147,14 @@ pPrintHaskellPackages oc = vcat
   , "in extensible-self"
   ]
 
-stackYamlPackages :: NonEmpty PackageName -> Doc
+stackYamlPackages :: NonEmpty Derivation -> Doc
 stackYamlPackages packages = hcat
   [ "self: { "
   , "inherit (self) "
   , text . intercalate " " $ NE.toList packageNames
   , "; }" ]
   where
-    packageNames = unPackageName <$> packages
+    packageNames = unPackageName . pkgName . packageId <$> packages
 
 toNixGhcVersion :: Version -> Doc
 toNixGhcVersion = (<>) "ghc" . toNixVersion . show . disp

@@ -46,19 +46,20 @@ data StackageOptions = StackageOptions
 makeLenses ''StackageOptions
 
 data Options = Options
-  { _optAllCabalHashesRepo  :: Maybe FilePath
-  , _optLtsHaskellRepo      :: Maybe FilePath
-  , _optOutStackagePackages :: FilePath
-  , _optOutStackageConfig   :: FilePath
-  , _optOutDerivation       :: FilePath
-  , _optDoCheckPackages     :: Bool
-  , _optDoHaddockPackages   :: Bool
-  , _optTweaks              :: Tweaks
-  , _optHackageDb           :: Maybe FilePath
-  , _optNixpkgsRepository   :: FilePath
-  , _optCompilerId          :: CompilerId
-  , _optPlatform            :: Platform
-  , _optConfigOrigin        :: ConfigOrigin
+  { _optAllCabalHashesRepo   :: Maybe FilePath
+  , _optLtsHaskellRepo       :: Maybe FilePath
+  , _optOutStackagePackages  :: FilePath
+  , _optOutStackageConfig    :: FilePath
+  , _optOutDerivation        :: FilePath
+  , _optOutStackYamlPackages :: FilePath
+  , _optDoCheckPackages      :: Bool
+  , _optDoHaddockPackages    :: Bool
+  , _optTweaks               :: Tweaks
+  , _optHackageDb            :: Maybe FilePath
+  , _optNixpkgsRepository    :: FilePath
+  , _optCompilerId           :: CompilerId
+  , _optPlatform             :: Platform
+  , _optConfigOrigin         :: ConfigOrigin
   } deriving (Show)
 
 makeLenses ''Options
@@ -79,6 +80,7 @@ options = Options
   <*> outStackagePackages
   <*> outStackageConfig
   <*> outDerivation
+  <*> outStackYamlPackages
   <*> doCheckPackages
   <*> doHaddockPackages
   <*> tweaks
@@ -138,6 +140,14 @@ outDerivation = option str
     <> metavar "NIX_FILE"
     <> help "path to output derivation"
     <> value "default.nix"
+    <> showDefaultWith id )
+
+outStackYamlPackages :: Parser FilePath
+outStackYamlPackages = option str
+  ( long "out-stack-yaml-packages"
+    <> metavar "NIX_FILE"
+    <> help "path to output stackage.yaml packages list"
+    <> value "stack-yaml-packages.nix"
     <> showDefaultWith id )
 
 doCheckPackages :: Parser Bool
