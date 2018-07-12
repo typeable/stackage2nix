@@ -189,6 +189,6 @@ mkStackPackagesConfig opts = StackPackagesConfig
   , _spcNixpkgsResolver   = \i -> Just (Nix.binding # (i, Nix.path # [i]))
   , _spcTargetPlatform    = opts ^. optPlatform
   , _spcTargetCompiler    = unknownCompilerInfo (opts ^. optCompilerId) NoAbiTag
-  , _spcFlagAssignment    = []
+  , _spcFlagAssignment    = mempty
   , _spcDoCheckPackages   = opts ^. optDoCheckPackages
   , _spcDoHaddockPackages = opts ^. optDoHaddockPackages }

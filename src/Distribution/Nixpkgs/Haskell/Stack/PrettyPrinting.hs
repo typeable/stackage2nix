@@ -17,6 +17,8 @@ import qualified Language.Nix.FilePath as Nix
 import           Language.Nix.PrettyPrinting as PP
 import           Stack.Config (StackResolver, unStackResolver)
 
+import           Prelude hiding ((<>))
+
 
 data OverrideConfig = OverrideConfig
   { _ocGhc              :: Version

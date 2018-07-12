@@ -68,14 +68,14 @@ fromPackage conf pconf plan pkg =
       (haskellResolver conf)
       (targetPlatform conf)
       (targetCompiler conf)
-      flags
+      (mkFlagAssignment flags)
       (planDependencies plan)
       (configureBenches . configureTests $ pkgCabal pkg)
     genericDrv = fromPackageDescription
       (haskellResolver conf)
       (nixpkgsResolver conf)
       missingDeps
-      flags
+      (mkFlagAssignment flags)
       descr
     depName (Dependency name _) = name
     testDeps = setOf
