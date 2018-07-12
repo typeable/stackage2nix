@@ -31,7 +31,7 @@ library
                      , LtsHaskell
                      , Paths_stackage2nix
   build-depends:       base > 4.7 && < 5
-                     , Cabal > 2
+                     , Cabal > 2.2
                      , QuickCheck
                      , aeson
                      , bytestring

@@ -10,7 +10,7 @@ import Data.Text.Encoding as T
 import Distribution.Nixpkgs.Hashes as NH
 import Distribution.Package
 import Distribution.PackageDescription
-import Distribution.PackageDescription.Parse
+import Distribution.PackageDescription.Parsec
 import Distribution.Text ( display )
 import Git
 import Git.Libgit2 as Libgit2
@@ -46,9 +46,9 @@ readPackageByHash repoDir sha1Hash = do
       BlobString bs -> return bs
       BlobStringLazy bsl -> return $ BSL.toStrict bsl
       _ -> fail $ "Git SHA1 " ++ show sha1Hash ++ ": expected single Blob"
-  cabal <- case parseGenericPackageDescription (T.unpack $ T.decodeUtf8 buf) of
-    ParseOk _ a     -> return a
-    ParseFailed err -> fail ("Git SHA1 " ++ show sha1Hash ++ ": " ++ show err)
+  cabal <- let (_, res) = runParseResult (parseGenericPackageDescription buf)
+           in case res of Right a       -> return a
+                          Left (_, err) -> fail ("Git SHA1 " ++ show sha1Hash ++ ": " ++ show err)
   let
     hash = printSHA256 (digest (digestByName "sha256") buf)
     pkg  = setCabalFileHash hash cabal
@@ -58,9 +58,9 @@ readPackageByName :: FilePath -> PackageIdentifier -> IO (GenericPackageDescript
 readPackageByName repoDir (PackageIdentifier name version) = do
   let cabalFile = repoDir </> unPackageName name </> display version </> unPackageName name <.> "cabal"
   buf <- BS.readFile cabalFile
-  cabal <- case parseGenericPackageDescription (T.unpack $ T.decodeUtf8 buf) of
-             ParseOk _ a  -> return a
-             ParseFailed err -> fail (cabalFile ++ ": " ++ show err)
+  cabal <- let (_, res) = runParseResult (parseGenericPackageDescription buf)
+           in case res of Right a       -> return a
+                          Left (_, err) -> fail (cabalFile ++ ": " ++ show err)
   let
     hash = NH.printSHA256 (SSL.digest (SSL.digestByName "sha256") buf)
     pkg  = setCabalFileHash hash cabal

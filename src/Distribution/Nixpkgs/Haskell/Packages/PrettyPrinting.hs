@@ -2,6 +2,8 @@ module Distribution.Nixpkgs.Haskell.Packages.PrettyPrinting where
 
 import Language.Nix.PrettyPrinting
 
+import Prelude hiding ((<>))
+
 compilerConfig :: Doc -> Doc
 compilerConfig body =
   funargsCurried ["self", "super"] <+> body
