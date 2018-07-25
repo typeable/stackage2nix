@@ -1,3 +1,0 @@
-resolver: lts-10.0
-extra-deps:
-  - cabal2nix-2.7.2

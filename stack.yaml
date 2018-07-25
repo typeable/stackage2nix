@@ -1,1 +1,10 @@
-stack-ghc-822.yaml
+resolver: lts-12.2
+extra-deps:
+  - git: https://github.com/fpco/stackage-curator.git
+    commit: 73c5ed06602990c33d3fec1711e27875f283b6bf
+  - git: https://github.com/jwiegley/gitlib.git
+    commit: 70c99759b8b9377f67492fe29afb32f05882409d
+    subdirs:
+      - gitlib
+      - gitlib-libgit2
+

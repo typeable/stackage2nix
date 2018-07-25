@@ -12,14 +12,9 @@ cache:
   - $HOME/.local/bin
   - $HOME/.stack
 
-env:
-  - STACK_YAML=stack-ghc-802.yaml
-  - STACK_YAML=stack-ghc-822.yaml
-
 jobs:
   include:
     - stage: bootstrap
-      env: STACK_YAML=stack-ghc-822.yaml
       install:
       # Install Nix
       - mkdir -p ~/.nix
