@@ -5,7 +5,6 @@ import Data.Foldable as F
 import Data.Function (on)
 import Data.Graph (Graph, Vertex)
 import Data.Maybe
-import Data.Monoid
 import Data.Ord as O
 import Distribution.Text (display, disp)
 import Distribution.Package (unPackageName, packageName)

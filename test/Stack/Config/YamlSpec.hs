@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Stack.Config.YamlSpec where
+module Stack.Config.YamlSpec (spec) where
 
 import Data.ByteString
 import Data.Text.Encoding as T
@@ -150,8 +150,11 @@ configNew = Config
 spec :: Spec
 spec = describe "Config" $ do
   specify "minimal" $
-    (Y.decode configYamlMinimal :: Maybe Config) `shouldBe` Just configMinimal
+    (decodeMaybe configYamlMinimal :: Maybe Config) `shouldBe` Just configMinimal
   specify "full" $
-    (Y.decode configYaml :: Maybe Config) `shouldBe` Just config
+    (decodeMaybe configYaml :: Maybe Config) `shouldBe` Just config
   specify "new" $
-    (Y.decode configNewYaml :: Maybe Config) `shouldBe` Just configNew
+    (decodeMaybe configNewYaml :: Maybe Config) `shouldBe` Just configNew
+
+decodeMaybe :: ByteString -> Maybe Config
+decodeMaybe = either (const Nothing) id . Y.decodeEither'

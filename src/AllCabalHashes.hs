@@ -6,7 +6,6 @@ import Data.ByteString as BS
 import Data.ByteString.Lazy as BSL
 import Data.Map as M
 import Data.Text as T
-import Data.Text.Encoding as T
 import Distribution.Nixpkgs.Hashes as NH
 import Distribution.Package
 import Distribution.PackageDescription

@@ -3,13 +3,11 @@
 module Stack.Config where
 
 import Control.Lens
-import Data.Bifunctor
 import Data.ByteString as BS
 import Data.Coerce
 import Data.List as L
 import Data.List.NonEmpty as NE
 import Data.Maybe
-import Data.Semigroup
 import Data.Text as T
 import Data.Yaml
 import Network.URI
@@ -192,4 +190,4 @@ readStackConfig stackYaml = do
     mkStackConfig = over (scPackages . traversed . spLocation) relativeToStackYaml
       . over (scExtraDeps . traversed . spLocation) relativeToStackYaml
       . fromYamlConfig
-  second mkStackConfig . decodeEither <$> BS.readFile (stackYaml ^. syFilePath)
+  bimap show mkStackConfig . decodeEither' <$> BS.readFile (stackYaml ^. syFilePath)
