@@ -1,8 +1,0 @@
-resolver: lts-9.21
-extra-deps:
-- Cabal-2.0.0.2
-- cabal2nix-2.7.2
-- hackage-db-2.0
-- stackage-curator-0.15.0.0
-nix:
-  packages: [icu openssl zlib]
