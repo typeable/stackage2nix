@@ -31,7 +31,7 @@ spec = describe "StackConfig" $ do
     $ checkYamlConfig packageExtraDepsNewBs packageExtraDepsNewConf
 
 parseYamlConfig :: ByteString -> Maybe StackConfig
-parseYamlConfig = fmap fromYamlConfig . Y.decode
+parseYamlConfig = either (const Nothing) (Just . fromYamlConfig) . Y.decodeEither'
 
 checkYamlConfig :: ByteString -> StackConfig -> Expectation
 checkYamlConfig bs sc = parseYamlConfig bs `shouldBe` Just sc
