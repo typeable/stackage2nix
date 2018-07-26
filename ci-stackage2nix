@@ -4,21 +4,21 @@ set -e
 
 STACKAGE2NIX_WORK_DIR=${STACKAGE2NIX_WORK_DIR:-$HOME}
 STACKAGE_REPO=${STACKAGE_REPO:-$STACKAGE2NIX_WORK_DIR/lts-haskell}
-ALL_CABAL_HASHES_DIR=${ALL_CABAL_HASHES_DIR:-$STACKAGE2NIX_WORK_DIR/all-cabal-hashes}
+ALL_CABAL_HASHES_REPO=${ALL_CABAL_HASHES_REPO:-$STACKAGE2NIX_WORK_REPO/all-cabal-hashes}
 STACK_FILE=${STACK_YAML:-stack.yaml}
 
 if [ ! -d "$STACKAGE_REPO" ]; then
-  git clone --depth 1 https://github.com/fpco/lts-haskell.git "$STACKAGE_REPO"
+  git clone --depth 1 https://github.com/commercialhaskell/lts-haskell.git "$STACKAGE_REPO"
 fi
 
-if [ ! -d "$ALL_CABAL_HASHES_DIR" ]; then
-  git clone --branch hackage https://github.com/commercialhaskell/all-cabal-hashes.git "$ALL_CABAL_HASHES_DIR"
+if [ ! -d "$ALL_CABAL_HASHES_REPO" ]; then
+  git clone --branch hackage https://github.com/commercialhaskell/all-cabal-hashes.git "$ALL_CABAL_HASHES_REPO"
 fi
 
 set -x
 time stackage2nix \
   --lts-haskell "$STACKAGE_REPO" \
-  --all-cabal-hashes "$ALL_CABAL_HASHES_DIR" \
+  --all-cabal-hashes "$ALL_CABAL_HASHES_REPO" \
   --hackage-db "$HOME/.cabal/packages/hackage.haskell.org/01-index.tar" \
   --with-stackage-closure \
   "$STACK_FILE"

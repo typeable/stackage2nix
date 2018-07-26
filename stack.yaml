@@ -1,5 +1,6 @@
 resolver: lts-12.2
 extra-deps:
+  - yaml-0.8.31.1
   - git: https://github.com/fpco/stackage-curator.git
     commit: 73c5ed06602990c33d3fec1711e27875f283b6bf
   - git: https://github.com/jwiegley/gitlib.git
