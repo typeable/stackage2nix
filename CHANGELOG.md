@@ -1,3 +1,8 @@
+# 0.7.2
+- Build with ghc-8.4
+- Drop compatibility with Cabal<2.2
+- Don't check extra-deps when generating derivation from stack.yaml
+
 # 0.7.1
 - Generate stack packages `stack-yaml-packages.nix`
 
