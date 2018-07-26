@@ -97,4 +97,5 @@ finalizePackage :: Package -> PackageConfig -> Derivation -> Derivation
 finalizePackage pkg pconf drv = drv
   & src .~ pkgSource pkg
   & doCheck &&~ enableCheck pconf
+  & testDepends %~ (if enableCheck pconf then id else const mempty)
   & runHaddock &&~ enableHaddock pconf

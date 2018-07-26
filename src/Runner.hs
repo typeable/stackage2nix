@@ -50,9 +50,12 @@ run = do
       let
         stackResolver = stackConf ^. scResolver
         stackPackagesConfig = mkStackPackagesConfig opts
+        stackExtraDepsConfig = stackPackagesConfig
+          & spcDoCheckPackages .~ False
+          & spcDoHaddockPackages .~ False
       stackConfPackages <- traverse (fmap mkNode . packageDerivation stackPackagesConfig hackageDb)
         $ stackConf ^. scPackages
-      stackConfExtraDeps  <- traverse (fmap mkNode . packageDerivation stackPackagesConfig hackageDb)
+      stackConfExtraDeps  <- traverse (fmap mkNode . packageDerivation stackExtraDepsConfig hackageDb)
         $ stackConf ^. scExtraDeps
       let
         stackConfAllPackages = maybe stackConfPackages ((<>) stackConfPackages)
