@@ -28,7 +28,7 @@ jobs:
       - nix-channel --add https://nixos.org/channels/nixos-18.03 nixpkgs
       - nix-channel --update
       script:
-      - nix-env -i cabal-install
+      - nix-env -i cabal-install nix-prefetch-scripts
       - cabal update
       - nix-build nix/stackage2nix --dry-run
       - ./ci-stackage2nix --dry-run
