@@ -36,11 +36,12 @@ stack exec -- stackage2nix \
   ./stack.yaml
 ```
 
-To generate Stackage packages, you should supply additional
-`--all-cabal-hashes` and `--lts-haskell` flags that points to
-[commercialhaskell/all-cabal-hashes](https://github.com/commercialhaskell)
-checked out to `hackage` branch and
-[fpco/lts-haskell](https://github.com/fpco/lts-haskell) respectively.
+To generate Stackage packages, supply the `--all-cabal-hashes` flag
+with the path to a local clone of
+[all-cabal-hashes](https://github.com/commercialhaskell/all-cabal-hashes)
+checked out on the `hackage` branch and supply the `--lts-haskell` flag
+with the path to a local clone of
+[lts-haskell](https://github.com/commercialhaskell/lts-haskell).
 
 ### stackage2nix wrapper
 
