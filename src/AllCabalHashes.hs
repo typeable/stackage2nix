@@ -3,8 +3,9 @@ module AllCabalHashes where
 import Control.Lens hiding ((<.>))
 import Data.Aeson as A
 import Data.ByteString as BS
-import Data.ByteString.Lazy as BSL
+import Data.ByteString.Char8 as B8
 import Data.Map as M
+import Data.Tagged (Tagged(..))
 import Data.Text as T
 import Distribution.Nixpkgs.Hashes as NH
 import Distribution.Package
@@ -40,28 +41,34 @@ readPackageByHash repoDir sha1Hash = do
   let repoOpts = defaultRepositoryOptions { repoPath = repoDir }
   repo <- openLgRepository repoOpts
   buf <- runLgRepository repo $ do
-    BlobObj (Blob _ contents) <- lookupObject =<< parseOid sha1Hash
-    case contents of
-      BlobString bs -> return bs
-      BlobStringLazy bsl -> return $ BSL.toStrict bsl
-      _ -> fail $ "Git SHA1 " ++ show sha1Hash ++ ": expected single Blob"
-  cabal <- let (_, res) = runParseResult (parseGenericPackageDescription buf)
-           in case res of Right a       -> return a
-                          Left (_, err) -> fail ("Git SHA1 " ++ show sha1Hash ++ ": " ++ show err)
-  let
-    hash = printSHA256 (digest (digestByName "sha256") buf)
-    pkg  = setCabalFileHash hash cabal
-  return (pkg, hash)
+    oid <- parseOid sha1Hash
+    catBlob (Tagged oid)
+  parseCabal ("Git SHA1 " ++ show sha1Hash) buf
 
 readPackageByName :: FilePath -> PackageIdentifier -> IO (GenericPackageDescription, SHA256Hash)
 readPackageByName repoDir (PackageIdentifier name version) = do
-  let cabalFile = repoDir </> unPackageName name </> display version </> unPackageName name <.> "cabal"
-  buf <- BS.readFile cabalFile
-  cabal <- let (_, res) = runParseResult (parseGenericPackageDescription buf)
+  let cabalFile = unPackageName name </> display version </> unPackageName name <.> "cabal"
+  let repoOpts = defaultRepositoryOptions { repoPath = repoDir }
+  repo <- openLgRepository repoOpts
+  buf <- runLgRepository repo $ do
+    headCommit <- resolveReference "HEAD" >>= \case
+      Nothing -> fail "Failed to parse HEAD ref"
+      Just oid -> lookupCommit $ Tagged oid
+    blobOid <- commitTreeEntry headCommit (B8.pack cabalFile) >>= \case
+      Nothing -> fail (cabalFile ++ ": no such file at HEAD")
+      Just (BlobEntry oid PlainBlob) -> pure oid
+      Just (BlobEntry _ _) -> fail (cabalFile ++ " is not a plain blob")
+      _ -> fail (cabalFile ++ " points to a non-blob!")
+    catBlob blobOid
+  parseCabal cabalFile buf
+
+parseCabal :: String -> BS.ByteString -> IO (GenericPackageDescription, SHA256Hash)
+parseCabal what blob = do
+  cabal <- let (_, res) = runParseResult (parseGenericPackageDescription blob)
            in case res of Right a       -> return a
-                          Left (_, err) -> fail (cabalFile ++ ": " ++ show err)
+                          Left (_, err) -> fail (what ++ ": " ++ show err)
   let
-    hash = NH.printSHA256 (SSL.digest (SSL.digestByName "sha256") buf)
+    hash = NH.printSHA256 (SSL.digest (SSL.digestByName "sha256") blob)
     pkg  = setCabalFileHash hash cabal
   return (pkg, hash)
 

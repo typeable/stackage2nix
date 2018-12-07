@@ -23,7 +23,7 @@ rec {
     buildInputs = [ git ];
     installPhase = ''
       mkdir -p $out
-      git clone --branch hackage https://github.com/commercialhaskell/all-cabal-hashes.git $out
+      git clone --bare --branch hackage https://github.com/commercialhaskell/all-cabal-hashes.git $out
     '';
     SSL_CERT_FILE="${cacert}/etc/ssl/certs/ca-bundle.crt";
   };
