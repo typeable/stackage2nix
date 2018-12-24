@@ -51,6 +51,7 @@ library
                      , optparse-applicative
                      , pretty
                      , stackage-curator >= 0.15
+                     , tagged
                      , text
                      , unordered-containers
                      , yaml
