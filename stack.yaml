@@ -1,6 +1,9 @@
 resolver: lts-12.2
 extra-deps:
-  - yaml-0.8.31.1
+  - cabal2nix-2.13
+  - hpack-0.31.1
+  - infer-license-0.2.0
+  - yaml-0.10.0
   - git: https://github.com/fpco/stackage-curator.git
     commit: 73c5ed06602990c33d3fec1711e27875f283b6bf
   - git: https://github.com/jwiegley/gitlib.git
