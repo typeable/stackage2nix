@@ -1,4 +1,4 @@
-resolver: lts-12.2
+resolver: lts-12.16
 extra-deps:
   - cabal2nix-2.13
   - hpack-0.31.1
@@ -12,3 +12,6 @@ extra-deps:
       - gitlib
       - gitlib-libgit2
 
+nix:
+  enable: false  # run stack with --nix to enable
+  packages: [ icu, openssl, zlib ]
