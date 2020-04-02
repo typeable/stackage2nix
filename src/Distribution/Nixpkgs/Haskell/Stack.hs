@@ -30,11 +30,12 @@ data StackPackagesConfig = StackPackagesConfig
 makeLenses ''StackPackagesConfig
 
 getStackPackageFromDb :: DB.HackageDB -> StackPackage -> IO Package
-getStackPackageFromDb hackageDb stackPackage = do
-  PackageSourceSpec.getPackage'
-    False
-    (pure hackageDb)
-    (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
+getStackPackageFromDb hackageDb stackPackage = PackageSourceSpec.getPackage' PackageYamlHpack
+                                                                             False
+                                                                             (pure hackageDb)
+                                                                             source
+  where
+    source = stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir)
 
 stackLocationToSource
   :: PackageLocation

@@ -1,11 +1,19 @@
-resolver: lts-12.2
+resolver: lts-13.21
 extra-deps:
-  - yaml-0.8.31.1
-  - git: https://github.com/fpco/stackage-curator.git
-    commit: 73c5ed06602990c33d3fec1711e27875f283b6bf
-  - git: https://github.com/jwiegley/gitlib.git
-    commit: 70c99759b8b9377f67492fe29afb32f05882409d
+  - git: https://github.com/typeable/cabal2nix.git
+    commit: d88a8fac1ad5766e73c0426f13eef086be022973
+  - distribution-nixpkgs-1.3.1
+  - hpack-0.31.2
+  - store-0.7.2
+  - store-core-0.4.4.2
+  - th-utilities-0.2.4.0
+  - git: git://github.com/fpco/stackage-curator.git
+    commit: a9bf9ef02976f7d29ff0d977d9e0c19bba22d2cd
+  - git: git://github.com/jwiegley/gitlib.git
+    commit: 6520ffcfdc33a0f53fdeeb01c9ef2d55f8d367fb
     subdirs:
       - gitlib
       - gitlib-libgit2
 
+nix:
+  packages: [icu libgit2 openssl zlib]
