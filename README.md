@@ -1,4 +1,4 @@
-# stackage2nix
+# stackage2nix (DEPRECATED)
 
 [![Build Status](https://travis-ci.org/typeable/stackage2nix.svg?branch=master)](https://travis-ci.org/typeable/stackage2nix)
 
