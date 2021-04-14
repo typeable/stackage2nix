@@ -35,7 +35,7 @@ library
                      , QuickCheck
                      , aeson
                      , bytestring
-                     , cabal2nix >= 2.7.2
+                     , cabal2nix >= 2.11
                      , containers
                      , deepseq
                      , distribution-nixpkgs >= 1.1

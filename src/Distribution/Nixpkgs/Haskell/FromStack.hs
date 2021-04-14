@@ -5,11 +5,12 @@ import Control.Lens
 import Data.Set.Lens
 import Distribution.Compiler (CompilerInfo(..))
 import Distribution.System (Platform(..))
-import Distribution.Package (PackageName, PackageIdentifier(..), Dependency(..))
+import Distribution.Package (PackageName, PackageIdentifier(..), Dependency(..), packageId)
 import Distribution.PackageDescription
 import Distribution.Nixpkgs.Haskell.FromStack.Package
 import Distribution.Nixpkgs.Haskell.PackageSourceSpec
 import Distribution.Nixpkgs.Haskell.FromCabal
+import Distribution.Nixpkgs.Haskell.FromCabal.Flags (configureCabalFlags)
 import Distribution.Nixpkgs.Haskell.Derivation
 import Stackage.BuildPlan
 import Stackage.Types (CabalFileInfo(..),PackageConstraints(..), DepInfo(..), SimpleDesc(..), TestState(..))
@@ -63,19 +64,20 @@ fromPackage conf pconf plan pkg =
     configureBenches
       | pcBenches constraints == Don'tBuild = removeBenches
       | otherwise = id
-    flags = Map.toList (pcFlagOverrides constraints)
+    defaultFlags = configureCabalFlags (packageId (pkgCabal pkg))
+    flags = defaultFlags <> mkFlagAssignment (Map.toList $ pcFlagOverrides constraints)
     (descr, missingDeps) = finalizeGenericPackageDescription
       (haskellResolver conf)
       (targetPlatform conf)
       (targetCompiler conf)
-      (mkFlagAssignment flags)
+      flags
       (planDependencies plan)
       (configureBenches . configureTests $ pkgCabal pkg)
     genericDrv = fromPackageDescription
       (haskellResolver conf)
       (nixpkgsResolver conf)
       missingDeps
-      (mkFlagAssignment flags)
+      flags
       descr
     depName (Dependency name _) = name
     testDeps = setOf

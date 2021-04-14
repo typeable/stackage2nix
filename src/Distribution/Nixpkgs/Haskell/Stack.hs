@@ -33,6 +33,7 @@ getStackPackageFromDb :: DB.HackageDB -> StackPackage -> IO Package
 getStackPackageFromDb hackageDb stackPackage = do
   PackageSourceSpec.getPackage'
     False
+    False
     (pure hackageDb)
     (stackLocationToSource (stackPackage ^. spLocation) (stackPackage ^. spDir))
 
